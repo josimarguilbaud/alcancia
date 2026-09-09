@@ -1,0 +1,9 @@
+{
+  "name": "cotejo",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "description": "Lectura de documentos de identidad en el dispositivo, para banca. Un banco no puede aceptar «probablemente».",
+  "license": "MIT",
+  "dependencies": { "@qvac/sdk": "*" }
+}

@@ -1,0 +1,9 @@
+# QVAC son ~6 GB de binarios: se bajan con npm install.
+node_modules/
+
+# Documentos recibidos en uso. Aunque aqui todo sea sintetico, un lector de cedulas
+# no debe tener por costumbre publicar lo que le entra.
+datos/
+
+.DS_Store
+Thumbs.db
