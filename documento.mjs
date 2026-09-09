@@ -9,6 +9,7 @@
 // Por eso aquí el modelo solo transcribe y el código empareja etiqueta con valor. Lo
 // que no tiene etiqueta no se asigna: se devuelve como huérfano para que lo confirme
 // una persona. Preferimos decir "no lo leí" antes que decir un número que no vimos.
+import { createHash } from "node:crypto";
 import { completion } from "@qvac/sdk";
 
 export const PREGUNTA = "This is a national ID card. Transcribe every line of text exactly as printed, one line per row. Do not explain, do not add anything.";
@@ -163,14 +164,100 @@ export function evaluarKyc(campos, hoy = new Date()) {
   return { estado: "vigente", puedeSeguir: true, motivo: `Vigente hasta ${deIso(campos.expira)}.`, faltan, avisos };
 }
 
-export async function leerCedula(modelId, rutaImagen) {
-  const t0 = Date.now();
+/**
+ * Consenso de dos lecturas.
+ *
+ * Midiendo salió algo que no esperábamos: **VisionPsy no es determinista ni a temperatura
+ * 0**. La misma cédula, el mismo modelo y el mismo prompt pueden dar dos lecturas
+ * distintas. En otro producto eso sería una nota al pie; en un banco es el problema
+ * entero, porque significa que un campo puede salir bien una vez y mal la siguiente sin
+ * que nadie se entere.
+ *
+ * Así que se lee dos veces y **solo entra lo que las dos lecturas dicen igual**. Un campo
+ * que no se confirma a sí mismo se trata como uno que no se pudo leer: se marca, y si es
+ * obligatorio detiene el trámite. Cuesta el doble de tiempo. Treinta segundos de más para
+ * no abrir una cuenta con un dato que el modelo no sostiene dos veces seguidas es un
+ * intercambio que cualquier banco firma.
+ */
+const CAMPOS = ["nombre", "cedula", "nacimiento", "lugar", "sexo", "sangre", "expedida", "expira"];
+
+export function consensuar(lecturas) {
+  if (lecturas.length < 2) return { campos: { ...(lecturas[0] ?? {}) }, discrepancias: [] };
+
+  const campos = {};
+  const discrepancias = [];
+
+  for (const clave of CAMPOS) {
+    const vistos = lecturas.map((l) => l?.[clave] ?? "");
+    if (vistos.every((v) => plano(v) === plano(vistos[0]))) { campos[clave] = vistos[0]; continue; }
+    // No se queda con ninguna: si el modelo no lo sostiene dos veces, no lo sabemos.
+    campos[clave] = "";
+    discrepancias.push({ campo: clave, lecturas: vistos.map((v) => v || "(vacío)") });
+  }
+
+  // Una fecha huérfana que solo aparece en una lectura puede no existir. Preguntarle al
+  // operador por un dato que quizá inventó el modelo es peor que no preguntarle nada.
+  campos.huerfanos = (lecturas[0]?.huerfanos ?? []).filter((h) =>
+    lecturas.slice(1).every((l) => (l?.huerfanos ?? []).some((x) => plano(x) === plano(h))));
+
+  return { campos, discrepancias };
+}
+
+/**
+ * La huella deja por escrito qué produjo esta lectura: qué modelo, con qué cuantización,
+ * con qué prompt y sobre qué imagen. En banca eso tiene nombre, gobernanza de modelos, y
+ * responde la pregunta que hace un auditor un año después: ¿quién decidió que este
+ * documento estaba vigente? Los digest son de la entrada, no de la persona: no
+ * identifican a nadie y no permiten reconstruir la imagen.
+ */
+export function huellaDe({ modelo, cuantizacion, prompt, imagen, pasadas, hoy = new Date() }) {
+  const digest = (x) => createHash("sha256").update(x).digest("hex").slice(0, 16);
+  return {
+    modelo, cuantizacion, pasadas,
+    prompt: digest(String(prompt)),
+    imagen: imagen ? digest(imagen) : null,
+    leido: hoy.toISOString(),
+  };
+}
+
+async function unaLectura(modelId, rutaImagen) {
   const run = completion({
     modelId,
     history: [{ role: "user", content: PREGUNTA, attachments: [{ path: rutaImagen }] }],
     temperature: 0, max_tokens: 300, captureThinking: false,
   });
   const texto = (await run.text).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  const campos = camposDeCedula(texto);
-  return { campos, kyc: evaluarKyc(campos), textoLeido: texto, ms: Date.now() - t0, stats: await run.stats };
+  return { texto, campos: camposDeCedula(texto), stats: await run.stats };
+}
+
+export async function leerCedula(modelId, rutaImagen, opciones = {}) {
+  const pasadas = Math.max(1, opciones.pasadas ?? 2);
+  const t0 = Date.now();
+
+  const lecturas = [];
+  for (let i = 0; i < pasadas; i++) lecturas.push(await unaLectura(modelId, rutaImagen));
+
+  const { campos, discrepancias } = consensuar(lecturas.map((l) => l.campos));
+  const kyc = evaluarKyc(campos);
+
+  // Una discrepancia consigo mismo no es un detalle técnico: es el motivo por el que ese
+  // campo no está, y el operador tiene que leerlo con las mismas palabras que lo demás.
+  for (const d of discrepancias) {
+    kyc.avisos.push(`«${d.campo}» salió distinto en las dos lecturas (${d.lecturas.join(" / ")}): no se acepta ninguna`);
+  }
+
+  return {
+    campos, kyc, discrepancias,
+    textoLeido: lecturas.map((l) => l.texto).join("\n\n─── otra lectura de la misma imagen ───\n\n"),
+    lecturas: lecturas.map((l) => l.texto),
+    huella: huellaDe({
+      modelo: opciones.modelo ?? "VisionPsy-Nano-460M",
+      cuantizacion: opciones.cuantizacion ?? "q4_k_m (+ mmproj q8_0)",
+      prompt: PREGUNTA,
+      imagen: opciones.imagen ?? null,
+      pasadas,
+    }),
+    ms: Date.now() - t0,
+    stats: lecturas.map((l) => l.stats),
+  };
 }

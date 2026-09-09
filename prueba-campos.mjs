@@ -1,6 +1,6 @@
 // Pruebas de la capa de codigo, con el texto EXACTO que devolvio VisionPsy el 9 sep.
 // Sin modelo: corren en milisegundos. `node prueba-campos.mjs`
-import { camposDeCedula, evaluarKyc, etiquetaDe, cedulaValida, aIso, nombreDudoso } from "./documento.mjs";
+import { camposDeCedula, evaluarKyc, etiquetaDe, cedulaValida, aIso, nombreDudoso, consensuar, huellaDe, PREGUNTA } from "./documento.mjs";
 
 let ok = 0, fallo = 0;
 const igual = (nombre, a, b) => {
@@ -138,6 +138,82 @@ igual("y dice exactamente que falta", k.faltan, ["fecha de expiración"]);
 igual("el tramite se detiene", k.puedeSeguir, false);
 // "TIPO DE SANGRE" seguido de "EXPEDIDA" (otra etiqueta) no debe robarle el valor.
 igual("una etiqueta no se come a la siguiente", gastada.expedida, "2019-10-08");
+
+
+// ---------------------------------------------------------------- consenso de lecturas
+//
+// VisionPsy no es determinista ni a temperatura 0: la misma imagen puede dar dos lecturas
+// distintas. La lectura A es la registrada en `rendimiento/cedulas.json` el 9 sep. La B
+// esta CONSTRUIDA para la prueba, con la forma del fallo que si hemos visto de verdad (el
+// apellido pegado). Cuantas veces discrepa en la practica solo lo dice correr el modelo
+// dos veces sobre la misma maquina.
+
+console.log("\nconsensuar: solo entra lo que las dos lecturas dicen igual");
+
+const lecturaA = camposDeCedula(`NOMBRE
+RODRIGO ANTONIO BERNAL SAAVEDRA
+CEDULA
+3-701-2288
+FECHA DE NACIMIENTO
+30-11-1974
+EXPEDIDA
+11-02-2015
+EXPIRA
+11-02-2025`);
+
+const lecturaB = camposDeCedula(`NOMBRE
+RODRIGO ANTONIOBERNAL SAAVEDRA
+CEDULA
+3-701-2288
+FECHA DE NACIMIENTO
+30-11-1974
+EXPEDIDA
+11-02-2015
+EXPIRA
+11-02-2025`);
+
+const cons = consensuar([lecturaA, lecturaB]);
+igual("lo que coincide se queda", [cons.campos.cedula, cons.campos.expira], ["3-701-2288", "2025-02-11"]);
+igual("el nombre que no coincide se cae", cons.campos.nombre, "");
+igual("y se dice cual fue", cons.discrepancias.map((d) => d.campo), ["nombre"]);
+igual("con las dos lecturas a la vista", cons.discrepancias[0].lecturas.length, 2);
+
+const iguales = consensuar([lecturaA, lecturaA]);
+igual("dos lecturas iguales no pierden nada", iguales.campos.nombre, "RODRIGO ANTONIO BERNAL SAAVEDRA");
+igual("y no hay discrepancias", iguales.discrepancias, []);
+igual("una sola lectura pasa tal cual", consensuar([lecturaA]).campos.nombre, "RODRIGO ANTONIO BERNAL SAAVEDRA");
+
+// Un campo que una lectura ve y la otra no tambien discrepa. Es el modo de fallo que mas
+// duele: un campo que aparece a medias parece un campo leido.
+const sinExpira = { ...lecturaA, expira: "" };
+const parcial = consensuar([lecturaA, sinExpira]);
+igual("visto una sola vez no es visto", parcial.campos.expira, "");
+igual("y queda registrado", parcial.discrepancias.map((d) => d.campo), ["expira"]);
+
+// Una fecha huerfana que solo sale en una lectura puede no existir. No se le pregunta al
+// operador por un dato que quiza invento el modelo.
+const huerfanoA = { ...lecturaA, huerfanos: ["19-08-2032"] };
+const huerfanoB = { ...lecturaA, huerfanos: [] };
+igual("un huerfano de una sola lectura no entra", consensuar([huerfanoA, huerfanoB]).campos.huerfanos, []);
+igual("uno que sale en las dos, si", consensuar([huerfanoA, huerfanoA]).campos.huerfanos, ["19-08-2032"]);
+
+// El consenso no es cosmetico: si el campo que se cae es obligatorio, para el tramite.
+const kCons = evaluarKyc(parcial.campos, HOY);
+igual("sin expira confirmada, no evaluable", kCons.estado, "no evaluable");
+igual("y el tramite se detiene", kCons.puedeSeguir, false);
+
+console.log("\nhuellaDe: que modelo produjo este dato");
+const imagen = Buffer.from("una imagen cualquiera");
+const h1 = huellaDe({ modelo: "VisionPsy-Nano-460M", cuantizacion: "q4_k_m", prompt: PREGUNTA, imagen, pasadas: 2, hoy: HOY });
+const h2 = huellaDe({ modelo: "VisionPsy-Nano-460M", cuantizacion: "q4_k_m", prompt: PREGUNTA, imagen, pasadas: 2, hoy: HOY });
+igual("misma entrada, misma huella", h1, h2);
+igual("el digest no revela la entrada", h1.imagen.length, 16);
+igual("guarda cuantas pasadas hubo", h1.pasadas, 2);
+const h3 = huellaDe({ modelo: "VisionPsy-Nano-460M", cuantizacion: "q4_k_m", prompt: PREGUNTA + " ", imagen, pasadas: 2, hoy: HOY });
+igual("cambiar el prompt cambia la huella", h1.prompt === h3.prompt, false);
+const h4 = huellaDe({ modelo: "VisionPsy-Nano-460M", cuantizacion: "q4_k_m", prompt: PREGUNTA, imagen: Buffer.from("otra"), pasadas: 2, hoy: HOY });
+igual("cambiar la imagen tambien", h1.imagen === h4.imagen, false);
+igual("sin imagen, nulo y no vacio", huellaDe({ prompt: PREGUNTA, pasadas: 1, hoy: HOY }).imagen, null);
 
 console.log(`\n${ok} ok, ${fallo} fallan`);
 process.exit(fallo ? 1 : 0);

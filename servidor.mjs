@@ -78,7 +78,7 @@ const servidor = http.createServer(async (req, res) => {
     }
 
     if (req.method === "GET" && url.pathname === "/estado") {
-      return json(res, 200, { producto: PRODUCTO, modelos: MODELOS, documentoCargado: !!visionpsy });
+      return json(res, 200, { producto: PRODUCTO, modelos: MODELOS, documentoCargado: !!visionpsy, pasadas: 2 });
     }
 
     // Voz del oficial -> texto. Se guarda la última grabación para poder reproducir
@@ -110,7 +110,12 @@ const servidor = http.createServer(async (req, res) => {
       if (!imagen.length) return json(res, 400, { error: "falta la imagen" });
       const ruta = path.join(DATOS, `ultimo-documento.${ct.includes("jpeg") ? "jpg" : "png"}`);
       writeFileSync(ruta, imagen);
-      const r = await leerCedula(await modeloDeDocumentos(), ruta);
+      // Dos pasadas por defecto. `?pasadas=1` existe para depurar, no para atender.
+      const pasadas = Math.max(1, Math.min(3, Number(url.searchParams.get("pasadas")) || 2));
+      const r = await leerCedula(await modeloDeDocumentos(), ruta, {
+        pasadas, imagen,
+        modelo: "VisionPsy-Nano-460M", cuantizacion: "q4_k_m (+ mmproj q8_0)",
+      });
       return json(res, 200, r);
     }
 

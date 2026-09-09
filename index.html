@@ -656,6 +656,20 @@
             font-style: italic;
         }
 
+        .huella {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: var(--sp-4) var(--sp-16);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--media);
+            padding: var(--sp-16) var(--sp-24);
+            border-top: 1px solid var(--linea-f);
+        }
+
+        .huella dt { color: var(--suave); text-transform: uppercase; letter-spacing: 0.05em; }
+        .huella dd { margin: 0; word-break: break-all; color: var(--tinta); }
+
         [hidden] { display: none !important; }
     </style>
 </head>
@@ -768,6 +782,7 @@
             <details>
                 <summary>Lo que leyó el modelo, tal cual</summary>
                 <pre id="textoLeido"></pre>
+                <dl class="huella" id="huella" hidden></dl>
             </details>
 
             <div class="footer-action">
@@ -1229,6 +1244,8 @@
 
     var estado = {
         texto: "",
+        huella: null,
+        discrepancias: [],
         expediente: null,
         campos: null,
         kyc: null,
@@ -1244,7 +1261,7 @@
 
     function adoptar(r) {
         if (!r) return;
-        ["expediente", "campos", "kyc", "cotejo", "conflictos", "razones", "puedeSeguir", "descartes", "textoLeido"].forEach(function (k) {
+        ["expediente", "campos", "kyc", "cotejo", "conflictos", "razones", "puedeSeguir", "descartes", "textoLeido", "huella", "discrepancias"].forEach(function (k) {
             if (r[k] !== undefined) estado[k] = r[k];
         });
         pintar();
@@ -1401,6 +1418,26 @@
 
         $("textoLeido").textContent = estado.textoLeido || "(todavía no se ha leído ningún documento)";
 
+        // La huella: qué modelo, con qué prompt y sobre qué imagen salió esta lectura.
+        // Es la respuesta a la pregunta que hace un auditor un año después.
+        var hu2 = $("huella");
+        if (estado.huella) {
+            vaciar(hu2);
+            [
+                ["modelo", estado.huella.modelo + " · " + estado.huella.cuantizacion],
+                ["lecturas", estado.huella.pasadas + " sobre la misma imagen"],
+                ["prompt", estado.huella.prompt],
+                ["imagen", estado.huella.imagen || "—"],
+                ["leído", estado.huella.leido]
+            ].forEach(function (par) {
+                hu2.appendChild(el("dt", null, par[0]));
+                hu2.appendChild(el("dd", null, par[1]));
+            });
+            hu2.hidden = false;
+        } else {
+            hu2.hidden = true;
+        }
+
         // ---- el freno ----
         var mot = $("motivoBloqueo");
         var razones = estado.razones || [];
@@ -1526,14 +1563,21 @@
         var f = $("imagen").files && $("imagen").files[0];
         if (!f) return;
         if (!hayServidor) { decir($("estado"), "sin servidor: solo se pueden ver los casos de ejemplo", true); return; }
-        decir($("estado"), "leyendo la cédula en este equipo… (la primera tarda más: carga el modelo)");
+        decir($("estado"), "leyendo la cédula dos veces en este equipo… (la primera tarda más: carga el modelo)");
         f.arrayBuffer().then(function (buf) {
             return pedir("/documento", buf, f.type || "image/png");
         }).then(function (r) {
             estado.campos = r.campos;
             estado.textoLeido = r.textoLeido;
             estado.kyc = r.kyc;
-            decir($("estado"), "leída en " + (r.ms / 1000).toFixed(1) + " s, sin salir del equipo");
+            estado.huella = r.huella || null;
+            estado.discrepancias = r.discrepancias || [];
+            var veces = (r.huella && r.huella.pasadas) || 1;
+            var quiebre = estado.discrepancias.length
+                ? " · " + estado.discrepancias.length + " campo(s) no coincidieron consigo mismos"
+                : (veces > 1 ? " · las " + veces + " lecturas coinciden" : "");
+            decir($("estado"), "leída " + veces + " veces en " + (r.ms / 1000).toFixed(1) + " s, sin salir del equipo" + quiebre,
+                  estado.discrepancias.length > 0);
             redecidir();
         }).catch(function (e) { decir($("estado"), e.message, true); });
         $("imagen").value = "";
