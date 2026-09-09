@@ -67,6 +67,61 @@ conflicto haría saltar el aviso siempre, y un aviso que salta siempre deja de l
 
 ---
 
+## Se lee dos veces
+
+Midiendo salió algo que no esperábamos: **VisionPsy no es determinista ni a temperatura
+0**. La misma cédula, el mismo modelo y el mismo prompt pueden dar dos lecturas distintas.
+
+En otro producto eso sería una nota al pie. En un banco es el problema entero, porque
+significa que un campo puede salir bien una vez y mal la siguiente sin que nadie se
+entere.
+
+Así que **se lee dos veces y solo entra lo que las dos lecturas dicen igual.**
+
+| | |
+|---|---|
+| Las dos lecturas coinciden | el campo entra |
+| No coinciden | el campo **no entra**, y se dice con qué salió cada vez |
+| Una lo vio y la otra no | tampoco entra: visto una sola vez no es visto |
+| Una fecha huérfana en una sola lectura | se descarta: puede no existir |
+
+Un campo que no se confirma a sí mismo se trata exactamente igual que uno que no se pudo
+leer: se marca, y si es obligatorio **detiene el trámite**.
+
+Cuesta el doble de tiempo. Treinta segundos de más para no abrir una cuenta con un dato
+que el modelo no sostiene dos veces seguidas es un intercambio que cualquier banco firma.
+`?pasadas=1` existe para depurar, no para atender.
+
+---
+
+## La huella
+
+Cada lectura guarda **qué la produjo**:
+
+```json
+{
+  "modelo": "VisionPsy-Nano-460M",
+  "cuantizacion": "q4_k_m (+ mmproj q8_0)",
+  "pasadas": 2,
+  "prompt": "a1b2c3d4e5f60718",
+  "imagen": "9f8e7d6c5b4a3021",
+  "leido": "2026-09-09T18:20:00.000Z"
+}
+```
+
+En banca eso tiene nombre: gobernanza de modelos. Responde la pregunta que hace un
+auditor un año después, cuando el modelo ya se actualizó dos veces: **¿quién decidió que
+este documento estaba vigente?**
+
+Los digest son de la entrada, no de la persona. No identifican a nadie y no permiten
+reconstruir la imagen.
+
+Las dos cosas se sostienen mutuamente: la huella dice exactamente qué modelo y qué prompt
+produjeron el dato, y como ese mismo modelo con la misma entrada no siempre dice lo
+mismo, se lee dos veces y solo se acepta lo que coincide.
+
+---
+
 ## Lo que está medido
 
 | | |
@@ -74,7 +129,7 @@ conflicto haría saltar el aviso siempre, y un aviso que salta siempre deja de l
 | Campos leídos | **30** en cuatro cédulas sintéticas |
 | Campos mal | **0** |
 | Trámites decididos como lo haría un operador | **4 / 4** |
-| Pruebas deterministas | **83** |
+| Pruebas deterministas | **102** |
 
 Registro completo en [`rendimiento/cedulas.json`](rendimiento/cedulas.json), con el texto
 crudo que devolvió el modelo en cada documento.
@@ -110,7 +165,7 @@ npm start       # http://localhost:3215
 La primera foto tarda más: es cuando se carga VisionPsy.
 
 ```bash
-npm run prueba  # 83 pruebas deterministas, sin modelo, en milisegundos
+npm run prueba  # 102 pruebas deterministas, sin modelo, en milisegundos
 npm run casos   # recalcula los cuatro casos de la demostración
 ```
 
@@ -124,7 +179,7 @@ permite en localhost o HTTPS).
 
 | Archivo | Qué hace |
 |---|---|
-| `documento.mjs` | lee la cédula: empareja etiqueta con valor, y `evaluarKyc` da el veredicto de vigencia |
+| `documento.mjs` | lee la cédula dos veces, empareja etiqueta con valor, `consensuar` cruza las dos lecturas, `evaluarKyc` da el veredicto y `huellaDe` firma quién lo leyó |
 | `entrevista.mjs` | el dictado → expediente KYC. `cedulaEn`, `telefonoEn`, `montoEn` |
 | `cotejar.mjs` | el cotejo y `decidir`, la regla completa del trámite |
 | `servidor.mjs` | `/transcribir` `/entrevista` `/documento` `/decidir` `/caso` |
