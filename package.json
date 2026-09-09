@@ -1,9 +1,16 @@
 {
-  "name": "cotejo",
+  "name": "alcancia",
   "version": "0.1.0",
   "type": "module",
   "private": true,
-  "description": "Lectura de documentos de identidad en el dispositivo, para banca. Un banco no puede aceptar «probablemente».",
+  "description": "Alcancía: la ventanilla que no inventa un dato. Lectura de documentos de identidad y expediente KYC dentro del propio equipo de la sucursal.",
   "license": "MIT",
-  "dependencies": { "@qvac/sdk": "*" }
+  "dependencies": {
+    "@qvac/sdk": "*"
+  },
+  "scripts": {
+    "start": "node servidor.mjs",
+    "prueba": "node prueba-campos.mjs && node prueba-entrevista.mjs",
+    "casos": "node generar-casos.mjs"
+  }
 }

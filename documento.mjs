@@ -120,6 +120,13 @@ export function camposDeCedula(texto) {
   };
 }
 
+// De vuelta a como se lee una fecha en Panamá. El motor trabaja en ISO porque ordenar
+// y restar es más seguro así, pero al operador nunca se le enseña 2025-02-11.
+export const deIso = (iso) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso ?? ""));
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : String(iso ?? "");
+};
+
 /**
  * La regla del banco. No decide por el operador cuando no puede leer: distingue
  * "vencida" de "no pude leer la fecha", que para un trámite son cosas muy distintas.
@@ -148,12 +155,12 @@ export function evaluarKyc(campos, hoy = new Date()) {
   const vence = new Date(campos.expira + "T00:00:00");
   const dias = Math.floor((vence - hoy) / 86400000);
   if (dias < 0) {
-    return { estado: "vencida", puedeSeguir: false, motivo: `La cédula venció hace ${Math.abs(dias)} días (${campos.expira}).`, faltan, avisos };
+    return { estado: "vencida", puedeSeguir: false, motivo: `La cédula venció hace ${Math.abs(dias)} días (${deIso(campos.expira)}).`, faltan, avisos };
   }
   if (dias < 90) {
-    return { estado: "por vencer", puedeSeguir: true, motivo: `Vigente, pero vence en ${dias} días (${campos.expira}).`, faltan, avisos };
+    return { estado: "por vencer", puedeSeguir: true, motivo: `Vigente, pero vence en ${dias} días (${deIso(campos.expira)}).`, faltan, avisos };
   }
-  return { estado: "vigente", puedeSeguir: true, motivo: `Vigente hasta ${campos.expira}.`, faltan, avisos };
+  return { estado: "vigente", puedeSeguir: true, motivo: `Vigente hasta ${deIso(campos.expira)}.`, faltan, avisos };
 }
 
 export async function leerCedula(modelId, rutaImagen) {

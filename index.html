@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="es-PA">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alcancía - La ventanilla que no inventa un dato</title>
+    <style>
+        :root {
+            /* Tema Claro - Paleta Fintech Elegante (Indigo y Pizarra) */
+            --papel: #F4F6F8;
+            --hoja: #FFFFFF;
+            --tinta: #0F172A;
+            --media: #475569;
+            --suave: #94A3B8;
+            --linea: #CBD5E1;
+            --linea-f: #E2E8F0;
+            --metal: #F1F5F9;
+            --acento: #4338CA;
+            --acento-tenue: #EEF2FF;
+            --ambar: #D97706;
+            --ambar-tenue: #FEF3C7;
+            --rojo: #E11D48;
+            --rojo-tenue: #FFE4E6;
+            --verde: #059669;
+            --verde-tenue: #D1FAE5;
+
+            /* Tipografías Nativas Premium (Cero dependencias externas) */
+            --font-title: "Avenir Next", Avenir, "Century Gothic", "Trebuchet MS", sans-serif;
+            --font-body: "Avenir", "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
+            --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Courier New", monospace;
+
+            --sp-4: 4px;
+            --sp-8: 8px;
+            --sp-12: 12px;
+            --sp-16: 16px;
+            --sp-24: 24px;
+            --sp-32: 32px;
+            --sp-40: 40px;
+            --sp-64: 64px;
+
+            --rad-sm: 6px;
+            --rad-md: 12px;
+            --rad-lg: 20px;
+            --rad-pill: 9999px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --papel: #020617;
+                --hoja: #0F172A;
+                --tinta: #F8FAFC;
+                --media: #94A3B8;
+                --suave: #64748B;
+                --linea: #334155;
+                --linea-f: #1E293B;
+                --metal: #1E293B;
+                --acento: #818CF8;
+                --acento-tenue: #1E1B4B;
+                --ambar: #F59E0B;
+                --ambar-tenue: #451A03;
+                --rojo: #FB7185;
+                --rojo-tenue: #4C0519;
+                --verde: #34D399;
+                --verde-tenue: #022C22;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            box-shadow: none !important; /* Regla estricta: Cero sombras */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: var(--papel);
+            color: var(--tinta);
+            font-family: var(--font-body);
+            font-size: 16px;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        :focus-visible {
+            outline: 2px solid var(--acento);
+            outline-offset: 2px;
+        }
+
+        .container {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: var(--sp-24) var(--sp-16) calc(var(--sp-64) + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-32);
+        }
+
+        h1 {
+            font-family: var(--font-title);
+            font-size: 40px;
+            font-weight: 700;
+            letter-spacing: -0.022em;
+            line-height: 1.1;
+            color: var(--tinta);
+        }
+
+        h2 {
+            font-family: var(--font-title);
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: var(--tinta);
+        }
+
+        .rotulo {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 600;
+            color: var(--suave);
+        }
+
+        /* ---------- Encabezado ---------- */
+
+        .header {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-12);
+            padding: var(--sp-24);
+            background-color: var(--hoja);
+            border-radius: var(--rad-lg);
+            border: 1px solid var(--linea-f);
+        }
+
+        .header-top {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-4);
+        }
+
+        .subtitle {
+            color: var(--media);
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .model-info-container {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--sp-12);
+            margin-top: var(--sp-8);
+            padding-top: var(--sp-16);
+            border-top: 1px solid var(--linea-f);
+        }
+
+        .model-info {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--acento);
+            background-color: var(--acento-tenue);
+            padding: 6px 12px;
+            border-radius: var(--rad-pill);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .privacy-note {
+            font-size: 13px;
+            color: var(--media);
+        }
+
+        .pill-offline {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--sp-8);
+            align-self: flex-start;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            color: var(--verde);
+            background-color: var(--verde-tenue);
+            border: 1px solid var(--verde);
+            padding: 6px 14px;
+            border-radius: var(--rad-pill);
+        }
+
+        .pill-offline::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background-color: var(--verde);
+            flex: none;
+        }
+
+        /* ---------- Selector de casos ---------- */
+
+        .casos {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-12);
+            padding: var(--sp-16) var(--sp-24);
+            background-color: var(--hoja);
+            border: 1px dashed var(--linea);
+            border-radius: var(--rad-md);
+        }
+
+        .casos-botones {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--sp-8);
+        }
+
+        .caso-btn {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+            padding: 8px 16px;
+            border-radius: var(--rad-pill);
+            border: 1px solid var(--linea);
+            background-color: var(--hoja);
+            color: var(--media);
+        }
+
+        .caso-btn[aria-pressed="true"] {
+            background-color: var(--acento);
+            border-color: var(--acento);
+            color: #FFFFFF;
+        }
+
+        /* ---------- Captura ---------- */
+
+        .paneles {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--sp-16);
+        }
+
+        @media (min-width: 860px) {
+            .paneles { grid-template-columns: 1fr 1fr; }
+        }
+
+        .panel {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-12);
+            padding: var(--sp-24);
+            background-color: var(--hoja);
+            border: 1px solid var(--linea-f);
+            border-radius: var(--rad-lg);
+        }
+
+        textarea {
+            font-family: var(--font-body);
+            font-size: 15px;
+            line-height: 1.55;
+            color: var(--tinta);
+            background-color: var(--papel);
+            border: 1px solid var(--linea);
+            border-radius: var(--rad-md);
+            padding: var(--sp-16);
+            width: 100%;
+            min-height: 116px;
+            resize: vertical;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: var(--sp-12);
+            flex-direction: column;
+        }
+
+        @media (min-width: 480px) {
+            .btn-group { flex-direction: row; }
+            .btn-group button { flex: 1; }
+        }
+
+        button {
+            font-family: var(--font-title);
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: var(--rad-pill);
+            padding: 18px var(--sp-24);
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: opacity 0.2s ease, transform 0.1s ease;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            letter-spacing: 0.01em;
+        }
+
+        button:active { transform: scale(0.98); }
+
+        button:disabled {
+            background-color: var(--metal);
+            color: var(--suave);
+            cursor: not-allowed;
+            border-color: transparent;
+            transform: none;
+        }
+
+        .btn-primary {
+            background-color: var(--acento);
+            color: #FFFFFF;
+        }
+
+        .btn-secondary {
+            background-color: var(--hoja);
+            border-color: var(--linea);
+            color: var(--tinta);
+        }
+
+        .status-line {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--suave);
+            min-height: 16px;
+            letter-spacing: 0.03em;
+        }
+
+        /* ---------- Veredicto ---------- */
+
+        .verdict {
+            display: flex;
+            flex-direction: column;
+            padding: var(--sp-24);
+            border-radius: var(--rad-lg);
+            gap: var(--sp-12);
+            border: 1px solid transparent;
+        }
+
+        .verdict-header {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        .verdict-rotulo {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            text-transform: uppercase;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: var(--rad-pill);
+            letter-spacing: 0.05em;
+            color: #FFFFFF;
+        }
+
+        .verdict-texto {
+            font-size: 18px;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .verdict-continua {
+            font-size: 14px;
+            font-weight: 600;
+            opacity: 0.8;
+            margin-top: var(--sp-4);
+        }
+
+        .v-vigente { border-color: var(--verde); }
+        .v-vigente .verdict-rotulo { background-color: var(--verde); }
+        .v-vigente .verdict-texto, .v-vigente .verdict-continua { color: var(--verde); }
+
+        .v-por-vencer { background-color: var(--ambar-tenue); border-color: var(--ambar); }
+        .v-por-vencer .verdict-rotulo { background-color: var(--ambar); }
+        .v-por-vencer .verdict-texto, .v-por-vencer .verdict-continua { color: var(--ambar); }
+
+        .v-vencida { background-color: var(--rojo-tenue); border-color: var(--rojo); }
+        .v-vencida .verdict-rotulo { background-color: var(--rojo); }
+        .v-vencida .verdict-texto, .v-vencida .verdict-continua { color: var(--rojo); }
+
+        .v-no-evaluable { background-color: var(--ambar-tenue); border-color: var(--ambar); }
+        .v-no-evaluable .verdict-rotulo { background-color: var(--ambar); }
+        .v-no-evaluable .verdict-texto, .v-no-evaluable .verdict-continua { color: var(--ambar); }
+
+        /* ---------- El cotejo ---------- */
+
+        .cotejo {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-12);
+            padding: var(--sp-24);
+            border-radius: var(--rad-lg);
+            background-color: var(--rojo-tenue);
+            border: 1px solid var(--rojo);
+        }
+
+        .cotejo h2 { color: var(--rojo); font-size: 18px; }
+
+        .cotejo-caras {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--sp-12);
+        }
+
+        @media (min-width: 620px) {
+            .cotejo-caras { grid-template-columns: 1fr 1fr; }
+        }
+
+        .cotejo-cara {
+            background-color: var(--hoja);
+            border: 1px solid var(--linea);
+            border-radius: var(--rad-md);
+            padding: var(--sp-16);
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-4);
+        }
+
+        .cotejo-cara .valor {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            font-weight: 500;
+            word-break: break-word;
+        }
+
+        .cotejo-nota { font-size: 14px; color: var(--rojo); font-weight: 600; }
+
+        /* ---------- Pregunta por lo que falta ---------- */
+
+        .pregunta {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-4);
+            padding: var(--sp-16) var(--sp-24);
+            border-radius: var(--rad-md);
+            background-color: var(--acento-tenue);
+            border: 1px solid var(--acento);
+            color: var(--acento);
+        }
+
+        .pregunta strong { font-weight: 700; }
+
+        /* ---------- Columnas de datos ---------- */
+
+        .columnas {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--sp-16);
+            align-items: start;
+        }
+
+        @media (min-width: 860px) {
+            .columnas { grid-template-columns: 1fr 1fr; }
+        }
+
+        .columna { display: flex; flex-direction: column; gap: var(--sp-12); }
+
+        .columna-titulo { display: flex; flex-direction: column; gap: 2px; padding-left: var(--sp-4); }
+        .columna-titulo .de-donde { font-size: 13px; color: var(--media); }
+
+        .data-list {
+            display: flex;
+            flex-direction: column;
+            background-color: var(--hoja);
+            border-radius: var(--rad-lg);
+            border: 1px solid var(--linea-f);
+            overflow: hidden;
+        }
+
+        .data-row {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-8);
+            padding: var(--sp-16) var(--sp-24);
+            border-bottom: 1px solid var(--linea-f);
+        }
+
+        .data-row:last-child { border-bottom: none; }
+
+        .data-row.en-conflicto { background-color: var(--rojo-tenue); }
+
+        .data-label-group {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: var(--sp-12);
+            width: 100%;
+        }
+
+        .data-label {
+            font-size: 11px;
+            color: var(--suave);
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .data-label .obligatorio { color: var(--acento); }
+
+        .data-value {
+            font-family: var(--font-mono);
+            font-size: 16px;
+            color: var(--tinta);
+            font-weight: 500;
+            font-variant-numeric: tabular-nums;
+            word-break: break-word;
+            line-height: 1.5;
+        }
+
+        .data-value.vacio { color: var(--suave); font-style: italic; }
+        .data-value.alerta { color: var(--ambar); }
+        .data-value.malo { color: var(--rojo); }
+
+        .porque {
+            font-size: 13px;
+            color: var(--media);
+            font-family: var(--font-body);
+        }
+
+        /* Marcas de procedencia y de confianza */
+        .data-badge {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            text-transform: uppercase;
+            font-weight: 600;
+            border-radius: var(--rad-pill);
+            padding: 4px 10px;
+            white-space: nowrap;
+            letter-spacing: 0.02em;
+            flex: none;
+        }
+
+        .badge-leido      { background-color: var(--metal); border: 1px solid var(--linea); color: var(--tinta); }
+        .badge-noleido    { background-color: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar); }
+        .badge-confirmado { background-color: var(--verde-tenue); border: 1px solid var(--verde); color: var(--verde); }
+        .badge-reportado  { background-color: var(--metal); border: 1px solid var(--linea); color: var(--media); }
+        .badge-estimado   { background-color: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar); }
+        .badge-falta      { background-color: transparent; border: 1px dashed var(--linea); color: var(--suave); }
+        .badge-conflicto  { background-color: var(--rojo); border: 1px solid var(--rojo); color: #FFFFFF; }
+
+        /* ---------- Avisos, huérfanos, crudo ---------- */
+
+        .aviso-bloque {
+            background-color: var(--ambar-tenue);
+            color: var(--ambar);
+            padding: var(--sp-16) var(--sp-24);
+            border-radius: var(--rad-md);
+            font-weight: 500;
+            font-size: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-8);
+        }
+
+        .huerfanos-bloque {
+            background-color: var(--hoja);
+            border: 1px solid var(--linea);
+            padding: var(--sp-24);
+            border-radius: var(--rad-md);
+        }
+
+        .huerfano { display: flex; flex-direction: column; gap: var(--sp-12); }
+        .huerfano + .huerfano { margin-top: var(--sp-24); padding-top: var(--sp-24); border-top: 1px solid var(--linea-f); }
+
+        .huerfano .fecha {
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--tinta);
+        }
+
+        .huerfanos-botones { display: flex; flex-direction: column; gap: var(--sp-12); }
+
+        @media (min-width: 480px) {
+            .huerfanos-botones { flex-direction: row; }
+        }
+
+        .btn-small { padding: 12px var(--sp-16); font-size: 14px; }
+
+        details {
+            background-color: var(--hoja);
+            border-radius: var(--rad-md);
+            border: 1px solid var(--linea-f);
+            overflow: hidden;
+        }
+
+        summary {
+            font-size: 13px;
+            color: var(--media);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 600;
+            cursor: pointer;
+            padding: var(--sp-16) var(--sp-24);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--sp-12);
+        }
+
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '+'; font-size: 18px; font-weight: 400; }
+        details[open] summary::after { content: '\2212'; }
+
+        pre {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            background-color: var(--papel);
+            color: var(--media);
+            padding: var(--sp-24);
+            overflow-x: auto;
+            border-top: 1px solid var(--linea-f);
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .footer-action {
+            display: flex;
+            flex-direction: column;
+            gap: var(--sp-12);
+        }
+
+        .btn-full { width: 100%; }
+
+        .motivo-bloqueo {
+            font-size: 14px;
+            color: var(--rojo);
+            font-weight: 600;
+            text-align: center;
+            padding: var(--sp-12) var(--sp-16);
+            background-color: var(--rojo-tenue);
+            border-radius: var(--rad-md);
+        }
+
+        .motivo-bloqueo ul { margin: var(--sp-8) 0 0; padding-left: 1.2em; text-align: left; font-weight: 500; }
+
+        .aviso-servidor {
+            padding: var(--sp-16) var(--sp-24);
+            border-radius: var(--rad-md);
+            background-color: var(--ambar-tenue);
+            color: var(--ambar);
+            border: 1px solid var(--ambar);
+            font-size: 15px;
+        }
+
+        .aviso-servidor code {
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        .vacio-total {
+            color: var(--suave);
+            font-style: italic;
+        }
+
+        [hidden] { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+
+        <header class="header">
+            <div class="header-top">
+                <h1>Alcancía</h1>
+                <div class="subtitle">Lectura de documentos en ventanilla</div>
+            </div>
+            <span class="pill-offline">Sin conexión &middot; los dos modelos corren en este equipo</span>
+            <div class="model-info-container">
+                <span class="model-info" id="modelos">Whisper &middot; Qwen3 &middot; VisionPsy-Nano-460M</span>
+                <span class="privacy-note">Ningún dato del cliente sale de este equipo.</span>
+            </div>
+        </header>
+
+        <div class="aviso-servidor" id="aviso" hidden>
+            Esta es una copia guardada, sin servidor: se ven los cuatro casos ya medidos, pero no se puede
+            grabar al cliente ni leer una cédula nueva. Para eso hay que levantarlo con <code>node servidor.mjs</code>.
+        </div>
+
+        <section class="casos" aria-label="Casos de ejemplo">
+            <span class="rotulo">Casos medidos &middot; los cuatro desenlaces, con el texto real de cada cédula</span>
+            <div class="casos-botones" id="casos"></div>
+        </section>
+
+        <div class="paneles">
+
+            <section class="panel">
+                <span class="rotulo">Atención al cliente</span>
+                <textarea id="dictado" placeholder="Ej: Juana Pérez, cédula 8-123-456, quiere abrir cuenta de ahorros. Ingreso como 800 al mes, vive en La Chorrera."></textarea>
+                <div class="btn-group">
+                    <button class="btn-primary" id="grabar">Grabar al cliente</button>
+                    <button class="btn-secondary" id="interpretar">Interpretar</button>
+                </div>
+                <div class="status-line" id="estadoVoz"></div>
+            </section>
+
+            <section class="panel">
+                <span class="rotulo">Documento</span>
+                <p class="porque">La cédula confirma lo que el cliente dijo. Lo que no coincide, se marca.</p>
+                <div class="btn-group">
+                    <button class="btn-primary" id="tomarFoto">Tomar foto de la cédula</button>
+                    <button class="btn-secondary" id="subirArchivo">Subir archivo</button>
+                    <input type="file" id="imagen" accept="image/*" hidden>
+                </div>
+                <div class="status-line" id="estado"></div>
+            </section>
+
+        </div>
+
+        <section class="result-block" id="resultado" style="display:flex;flex-direction:column;gap:var(--sp-24);">
+
+            <div class="verdict" id="veredicto">
+                <div class="verdict-header">
+                    <span class="verdict-rotulo" id="veredictoRotulo"></span>
+                </div>
+                <div class="verdict-texto" id="veredictoTexto"></div>
+                <div class="verdict-continua" id="veredictoContinua"></div>
+            </div>
+
+            <div class="cotejo" id="cotejo" hidden>
+                <h2 id="cotejoTitulo"></h2>
+                <div class="cotejo-caras">
+                    <div class="cotejo-cara">
+                        <span class="rotulo">Lo que dijo el cliente</span>
+                        <span class="valor" id="cotejoDicho"></span>
+                    </div>
+                    <div class="cotejo-cara">
+                        <span class="rotulo">Lo que dice la cédula</span>
+                        <span class="valor" id="cotejoLeido"></span>
+                    </div>
+                </div>
+                <p class="cotejo-nota" id="cotejoNota"></p>
+                <div class="huerfanos-botones">
+                    <button class="btn-secondary btn-small" id="cotejoTomarLeido">Quedarme con lo de la cédula</button>
+                    <button class="btn-secondary btn-small" id="cotejoPreguntar">Preguntarle al cliente</button>
+                </div>
+            </div>
+
+            <div class="pregunta" id="pregunta" hidden></div>
+
+            <div class="columnas">
+
+                <div class="columna">
+                    <div class="columna-titulo">
+                        <h2>Expediente del cliente</h2>
+                        <span class="de-donde">Lo que se dijo en la ventanilla</span>
+                    </div>
+                    <div class="data-list" id="expediente"></div>
+                </div>
+
+                <div class="columna">
+                    <div class="columna-titulo">
+                        <h2>Lo que dice la cédula</h2>
+                        <span class="de-donde">Leído del documento, sin rellenar huecos</span>
+                    </div>
+                    <div class="data-list" id="campos"></div>
+                </div>
+
+            </div>
+
+            <div class="aviso-bloque" id="avisos" hidden></div>
+
+            <div class="huerfanos-bloque" id="huerfanos" hidden></div>
+
+            <details>
+                <summary>Lo que leyó el modelo, tal cual</summary>
+                <pre id="textoLeido"></pre>
+            </details>
+
+            <div class="footer-action">
+                <button class="btn-primary btn-full" id="continuar">Continuar con el trámite</button>
+                <div class="motivo-bloqueo" id="motivoBloqueo" hidden></div>
+            </div>
+
+        </section>
+
+    </div>
+
+<script>
+(function () {
+    "use strict";
+
+    /* ------------------------------------------------------------------
+       La pantalla no decide nada. Todas las reglas (qué está confirmado,
+       qué no coincide, si el trámite sigue) viven en el servidor, en
+       `cotejar.mjs` y `documento.mjs`, donde tienen pruebas. Aquí solo se
+       pinta lo que el servidor devolvió.
+
+       Los cuatro casos de abajo los incrusta `generar-casos.mjs` con ese
+       mismo código, para que la página siga explicándose cuando se abre
+       sin servidor. Con servidor, los botones vuelven a calcularlos de
+       verdad contra el modelo.
+       ------------------------------------------------------------------ */
+
+    /* CASOS:inicio */
+    var CASOS = [
+      {
+        "id": "vigente-limpia",
+        "boton": "1 · Todo cuadra",
+        "resumen": "El cliente dicta, la cédula lo confirma, el trámite sigue.",
+        "dictado": "María Isabel Quintero Arjona, cédula 8-912-3456, quiere abrir una cuenta de ahorros. Gana 1,200 balboas al mes, vive en Betania, el teléfono es 6123-4567 y es enfermera.",
+        "textoLeido": "This card is a national ID card.\nNOMBRE  \nMARIA ISABEL QUINTERO ARJONA  \nCEDula  \n8-912-3456  \nFecha de Nacimiento  \n17-04-1988  \nLUGAR DE NACIMIENTO  \nPANAMA, PANAMA  \nSEXO  \nF   O+  \nEXPEDIDA  \n02-06-2021  \nEXPIRA  \n02-06-2031",
+        "descartes": [],
+        "campos": {
+          "nombre": "MARIA ISABEL QUINTERO ARJONA",
+          "cedula": "8-912-3456",
+          "nacimiento": "1988-04-17",
+          "lugar": "PANAMA, PANAMA",
+          "sexo": "F",
+          "sangre": "O+",
+          "expedida": "2021-06-02",
+          "expira": "2031-06-02",
+          "huerfanos": []
+        },
+        "kyc": {
+          "estado": "vigente",
+          "puedeSeguir": true,
+          "motivo": "Vigente hasta 02-06-2031.",
+          "faltan": [],
+          "avisos": []
+        },
+        "expediente": {
+          "nombre": {
+            "valor": "María Isabel Quintero Arjona",
+            "estado": "confirmado",
+            "porque": "coincide con el documento"
+          },
+          "cedula": {
+            "valor": "8-912-3456",
+            "estado": "confirmado",
+            "porque": "coincide con el documento"
+          },
+          "producto": {
+            "valor": "cuenta de ahorros"
+          },
+          "ingreso": {
+            "valor": "B/. 1,200 / mes",
+            "estimado": false,
+            "porque": null
+          },
+          "domicilio": {
+            "valor": "Betania"
+          },
+          "telefono": {
+            "valor": "6123-4567"
+          },
+          "ocupacion": {
+            "valor": "enfermera"
+          }
+        },
+        "cotejo": [
+          {
+            "clave": "nombre",
+            "etiqueta": "Nombre completo",
+            "dicho": "María Isabel Quintero Arjona",
+            "leido": "MARIA ISABEL QUINTERO ARJONA",
+            "resultado": "coincide",
+            "nota": null,
+            "sobran": null,
+            "valor": "María Isabel Quintero Arjona",
+            "estado": "confirmado"
+          },
+          {
+            "clave": "cedula",
+            "etiqueta": "Cédula",
+            "dicho": "8-912-3456",
+            "leido": "8-912-3456",
+            "resultado": "coincide",
+            "nota": null,
+            "sobran": null,
+            "valor": "8-912-3456",
+            "estado": "confirmado"
+          }
+        ],
+        "conflictos": [],
+        "faltan": [],
+        "razones": [],
+        "puedeSeguir": true
+      },
+      {
+        "id": "vencida",
+        "boton": "2 · Vencida y el apellido no cuadra",
+        "resumen": "Dos motivos para detenerse, y ninguno se resuelve solo.",
+        "dictado": "Rodrigo Bernal Sánchez, cédula 3-701-2288, quiere un préstamo personal. Gana como 900 al mes y vive en Colón.",
+        "textoLeido": "NOMBRE  \nRODRIGO ANTONIO BERNAL SAAVEDRA  \n\nCEDULA  \n3-701-2288  \n\nFECHA DE NACIMIENTO  \n30-11-1974  \n\nLUGAR DE NACIMIENTO  \nCOLON, COLON  \n\nSEXO  \nM  \n\nTIPO DE SANGRE  \nA-  \n\nEXPEDIDA  \n11-02-2015  \n\nEXPIRA  \n11-02-2025",
+        "descartes": [],
+        "campos": {
+          "nombre": "RODRIGO ANTONIO BERNAL SAAVEDRA",
+          "cedula": "3-701-2288",
+          "nacimiento": "1974-11-30",
+          "lugar": "COLON, COLON",
+          "sexo": "M",
+          "sangre": "A-",
+          "expedida": "2015-02-11",
+          "expira": "2025-02-11",
+          "huerfanos": []
+        },
+        "kyc": {
+          "estado": "vencida",
+          "puedeSeguir": false,
+          "motivo": "La cédula venció hace 576 días (11-02-2025).",
+          "faltan": [],
+          "avisos": []
+        },
+        "expediente": {
+          "nombre": {
+            "valor": "Rodrigo Bernal Sánchez",
+            "estado": "conflicto",
+            "porque": "el documento dice «RODRIGO ANTONIO BERNAL SAAVEDRA»"
+          },
+          "cedula": {
+            "valor": "3-701-2288",
+            "estado": "confirmado",
+            "porque": "coincide con el documento"
+          },
+          "producto": {
+            "valor": "préstamo personal"
+          },
+          "ingreso": {
+            "valor": "B/. 900 / mes",
+            "estimado": true,
+            "porque": "dijo «como», no una cifra"
+          },
+          "domicilio": {
+            "valor": "Colón"
+          },
+          "telefono": {
+            "valor": ""
+          },
+          "ocupacion": {
+            "valor": ""
+          }
+        },
+        "cotejo": [
+          {
+            "clave": "nombre",
+            "etiqueta": "Nombre completo",
+            "dicho": "Rodrigo Bernal Sánchez",
+            "leido": "RODRIGO ANTONIO BERNAL SAAVEDRA",
+            "resultado": "discrepa",
+            "nota": null,
+            "sobran": [
+              "sanchez"
+            ],
+            "valor": "Rodrigo Bernal Sánchez",
+            "estado": "conflicto"
+          },
+          {
+            "clave": "cedula",
+            "etiqueta": "Cédula",
+            "dicho": "3-701-2288",
+            "leido": "3-701-2288",
+            "resultado": "coincide",
+            "nota": null,
+            "sobran": null,
+            "valor": "3-701-2288",
+            "estado": "confirmado"
+          }
+        ],
+        "conflictos": [
+          {
+            "clave": "nombre",
+            "etiqueta": "Nombre completo",
+            "dicho": "Rodrigo Bernal Sánchez",
+            "leido": "RODRIGO ANTONIO BERNAL SAAVEDRA",
+            "resultado": "discrepa",
+            "nota": null,
+            "sobran": [
+              "sanchez"
+            ],
+            "valor": "Rodrigo Bernal Sánchez",
+            "estado": "conflicto"
+          }
+        ],
+        "faltan": [],
+        "razones": [
+          "La cédula venció hace 576 días (11-02-2025).",
+          "Lo que dijo el cliente no coincide con el documento en: Nombre completo."
+        ],
+        "puedeSeguir": false
+      },
+      {
+        "id": "extranjero",
+        "boton": "3 · Dijo un apellido de menos",
+        "resumen": "No es un conflicto: es un nombre incompleto, y gana el del documento.",
+        "dictado": "Ana Lucía Ferreira, cédula E-8-145097, quiere abrir una cuenta de ahorros. Vive en Santiago y es diseñadora.",
+        "textoLeido": "This is a national ID card.\nNOMBRE  \nANA LUCIA FERREIRA DOS SANTOS\nCEDULA  \nE-8-145097  \nFECHA DE NACIMIENTO  \n05-09-1993  \nLUGAR DE NACIMIENTO  \nSAO PAULO, BRASIL  \nSEXO  \nF   B+  \nTIPO DE SANGRE  \nEXPEDIDA  \n19-08-2022  \nEXPIRA  \n19-08-2032",
+        "descartes": [],
+        "campos": {
+          "nombre": "ANA LUCIA FERREIRA DOS SANTOS",
+          "cedula": "E-8-145097",
+          "nacimiento": "1993-09-05",
+          "lugar": "SAO PAULO, BRASIL",
+          "sexo": "F",
+          "sangre": "B+",
+          "expedida": "2022-08-19",
+          "expira": "2032-08-19",
+          "huerfanos": []
+        },
+        "kyc": {
+          "estado": "vigente",
+          "puedeSeguir": true,
+          "motivo": "Vigente hasta 19-08-2032.",
+          "faltan": [],
+          "avisos": []
+        },
+        "expediente": {
+          "nombre": {
+            "valor": "ANA LUCIA FERREIRA DOS SANTOS",
+            "estado": "confirmado",
+            "porque": "dijo «Ana Lucía Ferreira»; el documento trae el nombre completo"
+          },
+          "cedula": {
+            "valor": "E-8-145097",
+            "estado": "confirmado",
+            "porque": "coincide con el documento"
+          },
+          "producto": {
+            "valor": "cuenta de ahorros"
+          },
+          "ingreso": {
+            "valor": ""
+          },
+          "domicilio": {
+            "valor": "Santiago"
+          },
+          "telefono": {
+            "valor": ""
+          },
+          "ocupacion": {
+            "valor": "diseñadora"
+          }
+        },
+        "cotejo": [
+          {
+            "clave": "nombre",
+            "etiqueta": "Nombre completo",
+            "dicho": "Ana Lucía Ferreira",
+            "leido": "ANA LUCIA FERREIRA DOS SANTOS",
+            "resultado": "contenido",
+            "nota": "el documento trae el nombre completo",
+            "sobran": null,
+            "valor": "ANA LUCIA FERREIRA DOS SANTOS",
+            "estado": "confirmado"
+          },
+          {
+            "clave": "cedula",
+            "etiqueta": "Cédula",
+            "dicho": "E-8-145097",
+            "leido": "E-8-145097",
+            "resultado": "coincide",
+            "nota": null,
+            "sobran": null,
+            "valor": "E-8-145097",
+            "estado": "confirmado"
+          }
+        ],
+        "conflictos": [],
+        "faltan": [],
+        "razones": [],
+        "puedeSeguir": true
+      },
+      {
+        "id": "gastada",
+        "boton": "4 · No se pudo leer la expiración",
+        "resumen": "El campo que más le importa al banco es el primero que el modelo pierde.",
+        "dictado": "José Castillero, cédula 4-155-8830, quiere abrir una cuenta de ahorros. Vive en David.",
+        "textoLeido": "Republic of Panama  \n\nTribal Electoral  \n\nCEDULA DE IDENTIDAD PERSONAL  \n\nNOMBRE  \n\nJOSE MIGUEL CASTILLERO PINZON  \n\nCEDula  \n\n4-155-8830  \n\nFECA DE NACIMIENTO  \n\n23-01-1966  \n\nLUARDE DE NACIMIENTO  \n\nDAVID, CHIRIQUI  \n\nSEXO  \n\nM  \n\nTIPO DE SANGRE  \n\nEXPEDIDA  \n\n08-10-2019  \n\nEXPIRA  \n\nNO ES UNA CEDula REAL",
+        "descartes": [],
+        "campos": {
+          "nombre": "JOSE MIGUEL CASTILLERO PINZON",
+          "cedula": "4-155-8830",
+          "nacimiento": "1966-01-23",
+          "lugar": "DAVID, CHIRIQUI",
+          "sexo": "M",
+          "sangre": "",
+          "expedida": "2019-10-08",
+          "expira": "",
+          "huerfanos": []
+        },
+        "kyc": {
+          "estado": "no evaluable",
+          "puedeSeguir": false,
+          "motivo": "No se pudo leer: fecha de expiración. El trámite no sigue hasta confirmarlo una persona.",
+          "faltan": [
+            "fecha de expiración"
+          ],
+          "avisos": []
+        },
+        "expediente": {
+          "nombre": {
+            "valor": "JOSE MIGUEL CASTILLERO PINZON",
+            "estado": "confirmado",
+            "porque": "dijo «José Castillero»; el documento trae el nombre completo"
+          },
+          "cedula": {
+            "valor": "4-155-8830",
+            "estado": "confirmado",
+            "porque": "coincide con el documento"
+          },
+          "producto": {
+            "valor": "cuenta de ahorros"
+          },
+          "ingreso": {
+            "valor": ""
+          },
+          "domicilio": {
+            "valor": "David"
+          },
+          "telefono": {
+            "valor": ""
+          },
+          "ocupacion": {
+            "valor": ""
+          }
+        },
+        "cotejo": [
+          {
+            "clave": "nombre",
+            "etiqueta": "Nombre completo",
+            "dicho": "José Castillero",
+            "leido": "JOSE MIGUEL CASTILLERO PINZON",
+            "resultado": "contenido",
+            "nota": "el documento trae el nombre completo",
+            "sobran": null,
+            "valor": "JOSE MIGUEL CASTILLERO PINZON",
+            "estado": "confirmado"
+          },
+          {
+            "clave": "cedula",
+            "etiqueta": "Cédula",
+            "dicho": "4-155-8830",
+            "leido": "4-155-8830",
+            "resultado": "coincide",
+            "nota": null,
+            "sobran": null,
+            "valor": "4-155-8830",
+            "estado": "confirmado"
+          }
+        ],
+        "conflictos": [],
+        "faltan": [],
+        "razones": [
+          "No se pudo leer: fecha de expiración. El trámite no sigue hasta confirmarlo una persona."
+        ],
+        "puedeSeguir": false
+      }
+    ];
+    /* CASOS:fin */
+
+    var CAMPOS_CEDULA = [
+        { clave: "nombre",     etiqueta: "Nombre" },
+        { clave: "cedula",     etiqueta: "Cédula" },
+        { clave: "nacimiento", etiqueta: "Fecha de nacimiento", fecha: true },
+        { clave: "lugar",      etiqueta: "Lugar de nacimiento" },
+        { clave: "sexo",       etiqueta: "Sexo" },
+        { clave: "sangre",     etiqueta: "Tipo de sangre" },
+        { clave: "expedida",   etiqueta: "Expedida", fecha: true },
+        { clave: "expira",     etiqueta: "Expira", fecha: true }
+    ];
+
+    var CAMPOS_KYC = [
+        { clave: "nombre",    etiqueta: "Nombre completo", obligatorio: true },
+        { clave: "cedula",    etiqueta: "Cédula",          obligatorio: true },
+        { clave: "producto",  etiqueta: "Producto solicitado", obligatorio: true },
+        { clave: "ingreso",   etiqueta: "Ingreso mensual" },
+        { clave: "domicilio", etiqueta: "Domicilio" },
+        { clave: "telefono",  etiqueta: "Teléfono" },
+        { clave: "ocupacion", etiqueta: "Ocupación" }
+    ];
+
+    var MARCAS = {
+        confirmado: "confirmado",
+        conflicto:  "no coincide",
+        estimado:   "estimado",
+        reportado:  "reportado",
+        falta:      "falta"
+    };
+
+    /* ---------- utilidades ---------- */
+
+    var $ = function (id) { return document.getElementById(id); };
+
+    function vaciar(n) { while (n.firstChild) n.removeChild(n.firstChild); }
+
+    function el(tag, clase, texto) {
+        var n = document.createElement(tag);
+        if (clase) n.className = clase;
+        if (texto != null) n.textContent = texto;
+        return n;
+    }
+
+    // El motor devuelve las fechas en ISO; la ventanilla panameña las lee DD-MM-AAAA.
+    function fecha(iso) {
+        if (!iso) return "";
+        var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+        return m ? m[3] + "-" + m[2] + "-" + m[1] : iso;
+    }
+
+    function fila(etiqueta, valor, marca, opciones) {
+        opciones = opciones || {};
+        var row = el("div", "data-row" + (opciones.conflicto ? " en-conflicto" : ""));
+
+        var grupo = el("div", "data-label-group");
+        var lab = el("span", "data-label");
+        lab.appendChild(document.createTextNode(etiqueta));
+        if (opciones.obligatorio) {
+            lab.appendChild(document.createTextNode(" "));
+            lab.appendChild(el("span", "obligatorio", "*"));
+        }
+        grupo.appendChild(lab);
+        grupo.appendChild(el("span", "data-badge badge-" + marca.clase, marca.texto));
+        row.appendChild(grupo);
+
+        row.appendChild(el("div", "data-value" + (opciones.tono ? " " + opciones.tono : ""), valor));
+        if (opciones.porque) row.appendChild(el("div", "porque", opciones.porque));
+        return row;
+    }
+
+    function lista(items) {
+        if (items.length === 1) return items[0];
+        return items.slice(0, -1).join(", ") + " y " + items[items.length - 1];
+    }
+
+    /* ---------- el estado de la ventanilla ---------- */
+
+    var estado = {
+        texto: "",
+        expediente: null,
+        campos: null,
+        kyc: null,
+        cotejo: [],
+        conflictos: [],
+        razones: [],
+        puedeSeguir: false,
+        descartes: [],
+        textoLeido: ""
+    };
+
+    var hayServidor = false;
+
+    function adoptar(r) {
+        if (!r) return;
+        ["expediente", "campos", "kyc", "cotejo", "conflictos", "razones", "puedeSeguir", "descartes", "textoLeido"].forEach(function (k) {
+            if (r[k] !== undefined) estado[k] = r[k];
+        });
+        pintar();
+    }
+
+    /* ---------- pintar ---------- */
+
+    function pintar() {
+        var exp = $("expediente");
+        vaciar(exp);
+
+        var e = estado.expediente || {};
+        CAMPOS_KYC.forEach(function (def) {
+            var dato = e[def.clave] || {};
+            var valor = dato.valor || "";
+            var marca, tono, porque = dato.porque || null;
+
+            if (!valor) {
+                marca = "falta";
+                valor = def.obligatorio ? "hace falta para seguir" : "no lo dijo";
+                tono = "vacio";
+                porque = null;
+            } else if (dato.estado === "conflicto") {
+                marca = "conflicto";
+                tono = "malo";
+            } else if (dato.estado === "confirmado") {
+                marca = "confirmado";
+            } else if (dato.estimado) {
+                marca = "estimado";
+                tono = "alerta";
+                porque = dato.porque;
+            } else {
+                marca = "reportado";
+            }
+
+            exp.appendChild(fila(def.etiqueta, valor, { clase: marca, texto: MARCAS[marca] }, {
+                obligatorio: def.obligatorio,
+                tono: tono,
+                porque: porque,
+                conflicto: marca === "conflicto"
+            }));
+        });
+
+        // ---- lo que dice la cédula ----
+        var campos = $("campos");
+        vaciar(campos);
+
+        if (!estado.campos) {
+            campos.appendChild(el("div", "data-row vacio-total", "Todavía no hay foto del documento. Nada está confirmado."));
+        } else {
+            var enConflicto = {};
+            (estado.conflictos || []).forEach(function (c) { enConflicto[c.clave] = true; });
+
+            CAMPOS_CEDULA.forEach(function (def) {
+                var bruto = estado.campos[def.clave];
+                if (!bruto) {
+                    campos.appendChild(fila(def.etiqueta, "no se pudo leer",
+                        { clase: "noleido", texto: "no se pudo leer" }, { tono: "alerta" }));
+                    return;
+                }
+                campos.appendChild(fila(def.etiqueta, def.fecha ? fecha(bruto) : bruto,
+                    { clase: "leido", texto: "leído en la cédula" },
+                    { conflicto: !!enConflicto[def.clave] }));
+            });
+        }
+
+        // ---- el cotejo ----
+        var cot = $("cotejo");
+        var c0 = (estado.conflictos || [])[0];
+        if (c0) {
+            $("cotejoTitulo").textContent = c0.etiqueta + ": no coincide";
+            $("cotejoDicho").textContent = c0.dicho;
+            $("cotejoLeido").textContent = c0.leido;
+            $("cotejoNota").textContent = "Alcancía no elige por su cuenta. Lo resuelve una persona antes de seguir.";
+            cot.hidden = false;
+        } else {
+            cot.hidden = true;
+        }
+
+        // ---- veredicto ----
+        var clases = {
+            "vigente": "v-vigente",
+            "por vencer": "v-por-vencer",
+            "vencida": "v-vencida",
+            "no evaluable": "v-no-evaluable"
+        };
+        var ver = $("veredicto");
+        if (!estado.kyc) {
+            ver.className = "verdict v-no-evaluable";
+            $("veredictoRotulo").textContent = "sin documento";
+            $("veredictoTexto").textContent = "Falta la foto de la cédula para saber si está vigente.";
+            $("veredictoContinua").textContent = "El trámite no puede continuar todavía.";
+        } else {
+            ver.className = "verdict " + (clases[estado.kyc.estado] || "v-no-evaluable");
+            $("veredictoRotulo").textContent = estado.kyc.estado;
+            $("veredictoTexto").textContent = estado.kyc.motivo;
+            $("veredictoContinua").textContent = estado.puedeSeguir
+                ? "El trámite puede continuar."
+                : "El trámite se detiene.";
+        }
+
+        // ---- lo que falta, preguntado ----
+        var faltantes = CAMPOS_KYC.filter(function (def) {
+            return !(e[def.clave] && e[def.clave].valor);
+        }).map(function (def) { return def.etiqueta.toLowerCase(); });
+
+        var preg = $("pregunta");
+        if (faltantes.length && estado.expediente) {
+            vaciar(preg);
+            preg.appendChild(el("strong", null, "Para completar el expediente falta: " + lista(faltantes) + "."));
+            preg.appendChild(el("span", null, "¿Se lo preguntas al cliente ahora que está enfrente?"));
+            preg.hidden = false;
+        } else {
+            preg.hidden = true;
+        }
+
+        // ---- avisos del documento y descartes del modelo ----
+        var av = $("avisos");
+        var avisos = (estado.kyc && estado.kyc.avisos ? estado.kyc.avisos.slice() : []);
+        (estado.descartes || []).forEach(function (d) { avisos.push(d); });
+        if (avisos.length) {
+            vaciar(av);
+            avisos.forEach(function (a) {
+                av.appendChild(el("span", null, a.charAt(0).toUpperCase() + a.slice(1) + "."));
+            });
+            av.hidden = false;
+        } else {
+            av.hidden = true;
+        }
+
+        // ---- fechas huérfanas ----
+        var hu = $("huerfanos");
+        var huerfanos = (estado.campos && estado.campos.huerfanos) || [];
+        if (huerfanos.length) {
+            vaciar(hu);
+            huerfanos.forEach(function (f) {
+                var caja = el("div", "huerfano");
+                caja.appendChild(el("span", null, "Se leyó esta fecha pero no a qué campo pertenece:"));
+                caja.appendChild(el("span", "fecha", f));
+                var botones = el("div", "huerfanos-botones");
+                ["expedida", "expira"].forEach(function (destino) {
+                    var b = el("button", "btn-secondary btn-small", "Asignar a " + (destino === "expedida" ? "Expedida" : "Expira"));
+                    b.type = "button";
+                    b.addEventListener("click", function () { asignarHuerfano(f, destino); });
+                    botones.appendChild(b);
+                });
+                caja.appendChild(botones);
+                hu.appendChild(caja);
+            });
+            hu.hidden = false;
+        } else {
+            hu.hidden = true;
+        }
+
+        $("textoLeido").textContent = estado.textoLeido || "(todavía no se ha leído ningún documento)";
+
+        // ---- el freno ----
+        var mot = $("motivoBloqueo");
+        var razones = estado.razones || [];
+        $("continuar").disabled = !estado.puedeSeguir;
+        if (razones.length) {
+            vaciar(mot);
+            mot.appendChild(el("span", null, razones.length === 1
+                ? "Trámite detenido"
+                : "Trámite detenido por " + razones.length + " motivos"));
+            var ul = el("ul");
+            razones.forEach(function (r) { ul.appendChild(el("li", null, r)); });
+            mot.appendChild(ul);
+            mot.hidden = false;
+        } else {
+            mot.hidden = true;
+        }
+    }
+
+    /* ---------- hablar con el servidor ---------- */
+
+    function decir(nodo, texto, malo) {
+        nodo.textContent = texto;
+        nodo.style.color = malo ? "var(--rojo)" : "";
+    }
+
+    function pedir(ruta, cuerpo, tipo) {
+        return fetch(ruta, {
+            method: "POST",
+            headers: { "content-type": tipo || "application/json" },
+            body: tipo ? cuerpo : JSON.stringify(cuerpo)
+        }).then(function (r) {
+            return r.json().then(function (j) {
+                if (!r.ok) throw new Error(j.error || ("error " + r.status));
+                return j;
+            });
+        });
+    }
+
+    // Vuelve a pedir la decisión cuando cambia una de las dos mitades. La regla no se
+    // duplica aquí: se le pregunta al servidor, que es donde está probada.
+    function redecidir() {
+        if (!hayServidor || !estado.expediente) { pintar(); return; }
+        pedir("/decidir", { expediente: estado.expediente, campos: estado.campos })
+            .then(adoptar)
+            .catch(function (e) { decir($("estado"), e.message, true); });
+    }
+
+    function asignarHuerfano(f, destino) {
+        if (!estado.campos) return;
+        var iso = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/.exec(f);
+        if (!iso) return;
+        estado.campos = Object.assign({}, estado.campos, {
+            huerfanos: estado.campos.huerfanos.filter(function (x) { return x !== f; })
+        });
+        estado.campos[destino] = iso[3] + "-" + String(iso[2]).padStart(2, "0") + "-" + String(iso[1]).padStart(2, "0");
+        redecidir();
+    }
+
+    /* ---------- entrevista ---------- */
+
+    $("interpretar").addEventListener("click", function () {
+        var texto = $("dictado").value.trim();
+        if (!texto) { decir($("estadoVoz"), "no hay nada que interpretar", true); return; }
+        if (!hayServidor) { decir($("estadoVoz"), "sin servidor: solo se pueden ver los casos de ejemplo", true); return; }
+        estado.texto = texto;
+        decir($("estadoVoz"), "leyendo lo que dijiste…");
+        $("interpretar").disabled = true;
+        pedir("/entrevista", { texto: texto, campos: estado.campos })
+            .then(function (r) {
+                adoptar(r);
+                decir($("estadoVoz"), "expediente armado en " + (r.ms / 1000).toFixed(1) + " s, aquí mismo");
+            })
+            .catch(function (e) { decir($("estadoVoz"), e.message, true); })
+            .then(function () { $("interpretar").disabled = false; });
+    });
+
+    /* ---------- voz ---------- */
+
+    var grabadora = null, trozos = [];
+
+    $("grabar").addEventListener("click", function () {
+        if (grabadora && grabadora.state === "recording") {
+            grabadora.stop();
+            return;
+        }
+        if (!navigator.mediaDevices || !window.MediaRecorder) {
+            decir($("estadoVoz"), "este navegador no graba; escribe el dictado o sube el audio", true);
+            return;
+        }
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(function (stream) {
+            trozos = [];
+            grabadora = new MediaRecorder(stream);
+            grabadora.ondataavailable = function (ev) { if (ev.data.size) trozos.push(ev.data); };
+            grabadora.onstop = function () {
+                stream.getTracks().forEach(function (t) { t.stop(); });
+                $("grabar").textContent = "Grabar al cliente";
+                decir($("estadoVoz"), "transcribiendo en este equipo…");
+                var blob = new Blob(trozos, { type: grabadora.mimeType || "audio/webm" });
+                blob.arrayBuffer().then(function (buf) {
+                    return pedir("/transcribir", buf, blob.type);
+                }).then(function (r) {
+                    $("dictado").value = r.texto;
+                    decir($("estadoVoz"), "transcrito en " + (r.ms / 1000).toFixed(1) + " s, sin salir del equipo");
+                }).catch(function (e) { decir($("estadoVoz"), e.message, true); });
+            };
+            grabadora.start();
+            $("grabar").textContent = "Detener";
+            decir($("estadoVoz"), "grabando…");
+        }).catch(function () {
+            decir($("estadoVoz"), "no se pudo abrir el micrófono", true);
+        });
+    });
+
+    /* ---------- documento ---------- */
+
+    $("subirArchivo").addEventListener("click", function () { $("imagen").click(); });
+    $("tomarFoto").addEventListener("click", function () {
+        $("imagen").setAttribute("capture", "environment");
+        $("imagen").click();
+    });
+
+    $("imagen").addEventListener("change", function () {
+        var f = $("imagen").files && $("imagen").files[0];
+        if (!f) return;
+        if (!hayServidor) { decir($("estado"), "sin servidor: solo se pueden ver los casos de ejemplo", true); return; }
+        decir($("estado"), "leyendo la cédula en este equipo… (la primera tarda más: carga el modelo)");
+        f.arrayBuffer().then(function (buf) {
+            return pedir("/documento", buf, f.type || "image/png");
+        }).then(function (r) {
+            estado.campos = r.campos;
+            estado.textoLeido = r.textoLeido;
+            estado.kyc = r.kyc;
+            decir($("estado"), "leída en " + (r.ms / 1000).toFixed(1) + " s, sin salir del equipo");
+            redecidir();
+        }).catch(function (e) { decir($("estado"), e.message, true); });
+        $("imagen").value = "";
+    });
+
+    /* ---------- resolver un conflicto ---------- */
+
+    $("cotejoPreguntar").addEventListener("click", function () {
+        decir($("estadoVoz"), "pregúntale al cliente y vuelve a dictar");
+        $("dictado").focus();
+        $("dictado").select();
+    });
+
+    $("cotejoTomarLeido").addEventListener("click", function () {
+        var c0 = (estado.conflictos || [])[0];
+        if (!c0 || !estado.expediente) return;
+        estado.expediente = Object.assign({}, estado.expediente);
+        estado.expediente[c0.clave] = { valor: c0.leido };
+        redecidir();
+    });
+
+    /* ---------- casos de ejemplo ---------- */
+
+    var contenedor = $("casos");
+
+    function cargarCaso(caso, boton) {
+        Array.prototype.forEach.call(contenedor.children, function (o) { o.setAttribute("aria-pressed", "false"); });
+        boton.setAttribute("aria-pressed", "true");
+        $("dictado").value = caso.dictado;
+        estado.texto = caso.dictado;
+
+        if (!hayServidor) {
+            adoptar(caso);
+            decir($("estadoVoz"), "copia guardada: abre con el servidor para que lo calcule el modelo");
+            decir($("estado"), "texto medido el 9 sep sobre la cédula sintética");
+            return;
+        }
+        decir($("estadoVoz"), "pasando el dictado por el modelo…");
+        decir($("estado"), "usando la lectura ya medida de esta cédula");
+        pedir("/caso", { texto: caso.dictado, textoLeido: caso.textoLeido })
+            .then(function (r) {
+                adoptar(r);
+                decir($("estadoVoz"), "expediente armado en " + (r.ms / 1000).toFixed(1) + " s, aquí mismo");
+            })
+            .catch(function (e) {
+                adoptar(caso);
+                decir($("estadoVoz"), e.message, true);
+            });
+    }
+
+    CASOS.forEach(function (caso) {
+        var b = el("button", "caso-btn", caso.boton);
+        b.type = "button";
+        b.title = caso.resumen || "";
+        b.setAttribute("aria-pressed", "false");
+        b.addEventListener("click", function () { cargarCaso(caso, b); });
+        contenedor.appendChild(b);
+    });
+
+    /* ---------- arranque ---------- */
+
+    pintar();
+
+    fetch("/estado")
+        .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error("sin servidor")); })
+        .then(function (s) {
+            hayServidor = true;
+            $("modelos").textContent = s.modelos;
+            $("aviso").hidden = true;
+        })
+        .catch(function () {
+            hayServidor = false;
+            $("aviso").hidden = false;
+        })
+        .then(function () {
+            if (CASOS.length) cargarCaso(CASOS[0], contenedor.firstChild);
+        });
+})();
+</script>
+
+</body>
+</html>

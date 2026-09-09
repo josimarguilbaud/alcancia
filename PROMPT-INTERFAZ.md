@@ -1,11 +1,11 @@
-# Prompt para generar la interfaz de Cotejo
+# Prompt para generar la interfaz de Alcancía (antes Cotejo)
 
 Copia todo lo que hay debajo de la línea y pégalo en la herramienta.
 Cuando te devuelva el HTML, pásamelo y yo lo cableo al motor.
 
 ---
 
-Necesito un **único archivo HTML autocontenido** para una aplicación llamada **Cotejo**.
+Necesito un **único archivo HTML autocontenido** para una aplicación llamada **Alcancía**.
 
 ## Qué es
 
@@ -104,7 +104,7 @@ Un encabezado, un área de captura y el resultado. Un solo flujo, de arriba abaj
 
 ### Encabezado
 
-- Título **Cotejo** y debajo, en texto secundario: «Lectura de documentos en ventanilla».
+- Título **Alcancía** y debajo, en texto secundario: «Lectura de documentos en ventanilla».
 - A la derecha, en monoespaciada pequeña y en color acento:
   `VisionPsy-Nano-460M · todo en esta computadora`.
 - Debajo, una línea discreta: `Ningún dato del cliente sale de este equipo.`
