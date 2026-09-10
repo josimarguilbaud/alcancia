@@ -545,32 +545,39 @@
 
   /* ---------------------------------------------------------------- tuberia de IA */
 
+  /* Avisa sin estorbar: esquina inferior, sin velo y sin robar el raton. Bloquear la
+     pantalla tres segundos cada vez que se cambia de caso es un castigo, y grabando eso
+     se hace muchas veces. */
   .velo {
-    position: fixed; inset: 0; z-index: 60;
-    background: rgba(11,17,33,.82);
-    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-    display: flex; align-items: center; justify-content: center; padding: 20px;
+    position: fixed; right: 20px; bottom: 20px; z-index: 60;
+    width: min(330px, calc(100vw - 40px));
+    pointer-events: none;
+    animation: asomar .22s ease-out;
   }
+  @keyframes asomar { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .velo { animation: none; } }
+
   .velo-caja {
-    background: var(--superficie); border-radius: var(--r-l);
-    padding: 28px; width: 100%; max-width: 440px;
-    display: flex; flex-direction: column; gap: 20px;
+    background: var(--superficie); border-radius: var(--r-m);
+    border: 1px solid var(--linea);
+    padding: 14px 16px; width: 100%;
+    display: flex; flex-direction: column; gap: 11px;
     box-shadow: var(--sombra-alta);
   }
-  .velo-caja h2 { font-size: 19px; text-align: center; }
-  .velo-caja > p { font-size: 13.5px; color: var(--media); text-align: center; }
-  .paso { display: flex; align-items: center; gap: 12px; }
+  .velo-caja h2 { font-size: 13px; }
+  .velo-caja > p { font-size: 11.5px; color: var(--suave); }
+  .paso { display: flex; align-items: center; gap: 10px; }
   .paso-nodo {
-    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    width: 24px; height: 24px; border-radius: 50%; flex: none;
     border: 2px solid var(--linea); color: var(--suave);
     display: flex; align-items: center; justify-content: center;
     transition: all .35s ease;
   }
-  .paso-nodo svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .paso-nodo svg { width: 12px; height: 12px; fill: none; stroke: currentColor; stroke-width: 2; }
   .paso.activo .paso-nodo { border-color: var(--primario); background: var(--primario); color: #fff; box-shadow: 0 0 14px rgba(37,99,235,.45); }
   .paso.listo .paso-nodo { border-color: var(--verde); background: var(--verde); color: #fff; box-shadow: none; }
-  .paso-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-  .paso-fila { display: flex; justify-content: space-between; gap: 10px; font-family: var(--mono); font-size: 10.5px; }
+  .paso-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .paso-fila { display: flex; justify-content: space-between; gap: 10px; font-family: var(--mono); font-size: 9.5px; }
   .paso-fila b { color: var(--tinta); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
   .paso-fila span { color: var(--suave); }
   .paso.listo .paso-fila span { color: var(--verde); }
@@ -785,7 +792,7 @@
 <div class="velo" id="tuberia" hidden>
   <div class="velo-caja">
     <h2>Trabajando en este equipo</h2>
-    <p>Sin conexión. Los tiempos que ves son los reales, no una animación.</p>
+    <p>Sin conexión. Los tiempos son los medidos.</p>
     <div class="paso" id="paso1">
       <span class="paso-nodo"><svg viewBox="0 0 24 24"><path d="M3 12h2l2-6 3 12 3-9 2 5h6"/></svg></span>
       <span class="paso-cuerpo">
@@ -1541,7 +1548,7 @@
     function tuberiaCerrar(n, ms) {
         $("paso" + n).className = "paso listo";
         $("paso" + n + "Estado").textContent = ms ? (ms / 1000).toFixed(1) + " s" : "listo";
-        setTimeout(function () { $("tuberia").hidden = true; }, 550);
+        setTimeout(function () { $("tuberia").hidden = true; }, 1400);
     }
 
     function tuberiaFallo() { $("tuberia").hidden = true; }
