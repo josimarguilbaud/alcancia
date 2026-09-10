@@ -7,16 +7,16 @@
     <style>
         :root {
             /* Tema Claro - Paleta Fintech Elegante (Indigo y Pizarra) */
-            --papel: #F4F6F8;
+            --papel: #F4F1EC;
             --hoja: #FFFFFF;
-            --tinta: #0F172A;
-            --media: #475569;
-            --suave: #94A3B8;
-            --linea: #CBD5E1;
-            --linea-f: #E2E8F0;
-            --metal: #F1F5F9;
-            --acento: #4338CA;
-            --acento-tenue: #EEF2FF;
+            --tinta: #1A1714;
+            --media: #57504A;
+            --suave: #918980;
+            --linea: #DCD5CB;
+            --linea-f: #ECE7E0;
+            --metal: #F3EFE9;
+            --acento: #7A4E1D;
+            --acento-tenue: #F6EEE2;
             --ambar: #D97706;
             --ambar-tenue: #FEF3C7;
             --rojo: #E11D48;
@@ -38,24 +38,24 @@
             --sp-40: 40px;
             --sp-64: 64px;
 
-            --rad-sm: 6px;
-            --rad-md: 12px;
-            --rad-lg: 20px;
+            --rad-sm: 3px;
+            --rad-md: 5px;
+            --rad-lg: 8px;
             --rad-pill: 9999px;
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --papel: #020617;
-                --hoja: #0F172A;
-                --tinta: #F8FAFC;
-                --media: #94A3B8;
-                --suave: #64748B;
-                --linea: #334155;
-                --linea-f: #1E293B;
-                --metal: #1E293B;
-                --acento: #818CF8;
-                --acento-tenue: #1E1B4B;
+                --papel: #12100D;
+                --hoja: #1C1916;
+                --tinta: #F2EEE8;
+                --media: #A39A8F;
+                --suave: #746C63;
+                --linea: #35302A;
+                --linea-f: #262220;
+                --metal: #272320;
+                --acento: #D9A05B;
+                --acento-tenue: #2B2117;
                 --ambar: #F59E0B;
                 --ambar-tenue: #451A03;
                 --rojo: #FB7185;
@@ -89,12 +89,60 @@
         }
 
         .container {
-            max-width: 980px;
+            max-width: 1040px;
             margin: 0 auto;
-            padding: var(--sp-24) var(--sp-16) calc(var(--sp-64) + env(safe-area-inset-bottom));
+            padding: var(--sp-24) var(--sp-24) calc(var(--sp-64) + env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
-            gap: var(--sp-32);
+            gap: var(--sp-24);
+        }
+
+        .barra {
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            background-color: var(--hoja);
+            border-bottom: 1px solid var(--linea);
+        }
+
+        .barra-dentro {
+            max-width: 1040px;
+            margin: 0 auto;
+            padding: var(--sp-12) var(--sp-24);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--sp-12) var(--sp-16);
+        }
+
+        .marca-app {
+            font-family: var(--font-title);
+            font-size: 19px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: var(--tinta);
+        }
+
+        .marca-app span {
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--media);
+            margin-left: var(--sp-12);
+            letter-spacing: 0;
+        }
+
+        .barra-derecha {
+            margin-left: auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--sp-12);
+        }
+
+        @media (max-width: 700px) {
+            .barra-derecha { margin-left: 0; width: 100%; }
+            .marca-app span { display: block; margin-left: 0; }
         }
 
         h1 {
@@ -159,12 +207,13 @@
 
         .model-info {
             font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--acento);
-            background-color: var(--acento-tenue);
-            padding: 6px 12px;
-            border-radius: var(--rad-pill);
-            font-weight: 600;
+            font-size: 10.5px;
+            color: var(--media);
+            background-color: var(--metal);
+            border: 1px solid var(--linea);
+            padding: 4px 9px;
+            border-radius: var(--rad-sm);
+            font-weight: 500;
             letter-spacing: 0.02em;
         }
 
@@ -176,17 +225,17 @@
         .pill-offline {
             display: inline-flex;
             align-items: center;
-            gap: var(--sp-8);
-            align-self: flex-start;
+            gap: 7px;
             font-family: var(--font-mono);
-            font-size: 11px;
+            font-size: 10.5px;
             font-weight: 600;
             letter-spacing: 0.02em;
             color: var(--verde);
             background-color: var(--verde-tenue);
             border: 1px solid var(--verde);
-            padding: 6px 14px;
+            padding: 4px 10px;
             border-radius: var(--rad-pill);
+            white-space: nowrap;
         }
 
         .pill-offline::before {
@@ -202,12 +251,11 @@
 
         .casos {
             display: flex;
-            flex-direction: column;
-            gap: var(--sp-12);
-            padding: var(--sp-16) var(--sp-24);
-            background-color: var(--hoja);
-            border: 1px dashed var(--linea);
-            border-radius: var(--rad-md);
+            flex-wrap: wrap;
+            align-items: center;
+            gap: var(--sp-8) var(--sp-16);
+            padding: var(--sp-12) 0;
+            border-bottom: 1px solid var(--linea-f);
         }
 
         .casos-botones {
@@ -218,11 +266,11 @@
 
         .caso-btn {
             font-family: var(--font-mono);
-            font-size: 12px;
+            font-size: 11.5px;
             font-weight: 600;
             letter-spacing: 0.02em;
-            padding: 8px 16px;
-            border-radius: var(--rad-pill);
+            padding: 6px 11px;
+            border-radius: var(--rad-sm);
             border: 1px solid var(--linea);
             background-color: var(--hoja);
             color: var(--media);
@@ -250,9 +298,9 @@
             display: flex;
             flex-direction: column;
             gap: var(--sp-12);
-            padding: var(--sp-24);
+            padding: var(--sp-16) var(--sp-16) var(--sp-16);
             background-color: var(--hoja);
-            border: 1px solid var(--linea-f);
+            border: 1px solid var(--linea);
             border-radius: var(--rad-lg);
         }
 
@@ -282,11 +330,11 @@
         }
 
         button {
-            font-family: var(--font-title);
-            font-size: 16px;
+            font-family: var(--font-body);
+            font-size: 14.5px;
             font-weight: 600;
-            border-radius: var(--rad-pill);
-            padding: 18px var(--sp-24);
+            border-radius: var(--rad-sm);
+            padding: 11px var(--sp-16);
             cursor: pointer;
             border: 1px solid transparent;
             transition: opacity 0.2s ease, transform 0.1s ease;
@@ -331,9 +379,9 @@
         .verdict {
             display: flex;
             flex-direction: column;
-            padding: var(--sp-24);
+            padding: var(--sp-16) var(--sp-24);
             border-radius: var(--rad-lg);
-            gap: var(--sp-12);
+            gap: var(--sp-8);
             border: 1px solid transparent;
         }
 
@@ -345,11 +393,11 @@
 
         .verdict-rotulo {
             font-family: var(--font-mono);
-            font-size: 11px;
+            font-size: 10.5px;
             text-transform: uppercase;
             font-weight: 700;
-            padding: 6px 12px;
-            border-radius: var(--rad-pill);
+            padding: 4px 9px;
+            border-radius: var(--rad-sm);
             letter-spacing: 0.05em;
             color: #FFFFFF;
         }
@@ -456,7 +504,7 @@
 
         .columna { display: flex; flex-direction: column; gap: var(--sp-12); }
 
-        .columna-titulo { display: flex; flex-direction: column; gap: 2px; padding-left: var(--sp-4); }
+        .columna-titulo { display: flex; flex-direction: column; gap: 1px; padding-left: 2px; }
         .columna-titulo .de-donde { font-size: 13px; color: var(--media); }
 
         .data-list {
@@ -464,15 +512,15 @@
             flex-direction: column;
             background-color: var(--hoja);
             border-radius: var(--rad-lg);
-            border: 1px solid var(--linea-f);
+            border: 1px solid var(--linea);
             overflow: hidden;
         }
 
         .data-row {
             display: flex;
             flex-direction: column;
-            gap: var(--sp-8);
-            padding: var(--sp-16) var(--sp-24);
+            gap: 3px;
+            padding: 10px var(--sp-16);
             border-bottom: 1px solid var(--linea-f);
         }
 
@@ -521,11 +569,11 @@
         /* Marcas de procedencia y de confianza */
         .data-badge {
             font-family: var(--font-mono);
-            font-size: 10px;
+            font-size: 9.5px;
             text-transform: uppercase;
             font-weight: 600;
-            border-radius: var(--rad-pill);
-            padding: 4px 10px;
+            border-radius: var(--rad-sm);
+            padding: 3px 7px;
             white-space: nowrap;
             letter-spacing: 0.02em;
             flex: none;
@@ -675,19 +723,18 @@
 </head>
 <body>
 
-    <div class="container">
-
-        <header class="header">
-            <div class="header-top">
-                <h1>Alcancía</h1>
-                <div class="subtitle">Lectura de documentos en ventanilla</div>
-            </div>
-            <span class="pill-offline">Sin conexión &middot; los dos modelos corren en este equipo</span>
-            <div class="model-info-container">
+    <header class="barra">
+        <div class="barra-dentro">
+            <h1 class="marca-app">Alcancía<span>Lectura de documentos en ventanilla</span></h1>
+            <div class="barra-derecha">
+                <span class="pill-offline">Sin conexión</span>
                 <span class="model-info" id="modelos">Whisper &middot; Qwen3 &middot; VisionPsy-Nano-460M</span>
                 <span class="privacy-note">Ningún dato del cliente sale de este equipo.</span>
             </div>
-        </header>
+        </div>
+    </header>
+
+    <div class="container">
 
         <div class="aviso-servidor" id="aviso" hidden>
             Esta es una copia guardada, sin servidor: se ven los cuatro casos ya medidos, pero no se puede
@@ -695,7 +742,7 @@
         </div>
 
         <section class="casos" aria-label="Casos de ejemplo">
-            <span class="rotulo">Casos medidos &middot; los cuatro desenlaces, con el texto real de cada cédula</span>
+            <span class="rotulo">Casos medidos</span>
             <div class="casos-botones" id="casos"></div>
         </section>
 
