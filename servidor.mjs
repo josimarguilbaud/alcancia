@@ -77,6 +77,19 @@ const servidor = http.createServer(async (req, res) => {
       return res.end(readFileSync(path.join(DIR, "index.html")));
     }
 
+    // Las tipografias se sirven desde el repo, no desde un CDN: una app que funciona sin
+    // conexion no puede depender de una descarga externa para verse bien.
+    if (req.method === "GET" && url.pathname.startsWith("/tipografias/")) {
+      const nombre = path.basename(url.pathname);
+      const ruta = path.join(DIR, "tipografias", nombre);
+      if (!existsSync(ruta)) return json(res, 404, { error: "no existe" });
+      res.writeHead(200, {
+        "content-type": nombre.endsWith(".woff2") ? "font/woff2" : "text/css; charset=utf-8",
+        "cache-control": "public, max-age=604800",
+      });
+      return res.end(readFileSync(ruta));
+    }
+
     if (req.method === "GET" && url.pathname === "/estado") {
       return json(res, 200, { producto: PRODUCTO, modelos: MODELOS, documentoCargado: !!visionpsy, pasadas: 2 });
     }

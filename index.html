@@ -4,842 +4,794 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alcancía - La ventanilla que no inventa un dato</title>
-    <style>
-        :root {
-            /* Tema Claro - Paleta Fintech Elegante (Indigo y Pizarra) */
-            --papel: #F4F1EC;
-            --hoja: #FFFFFF;
-            --tinta: #1A1714;
-            --media: #57504A;
-            --suave: #918980;
-            --linea: #DCD5CB;
-            --linea-f: #ECE7E0;
-            --metal: #F3EFE9;
-            --acento: #7A4E1D;
-            --acento-tenue: #F6EEE2;
-            --ambar: #D97706;
-            --ambar-tenue: #FEF3C7;
-            --rojo: #E11D48;
-            --rojo-tenue: #FFE4E6;
-            --verde: #059669;
-            --verde-tenue: #D1FAE5;
-
-            /* Tipografías Nativas Premium (Cero dependencias externas) */
-            --font-title: "Avenir Next", Avenir, "Century Gothic", "Trebuchet MS", sans-serif;
-            --font-body: "Avenir", "Helvetica Neue", "Segoe UI", Roboto, sans-serif;
-            --font-mono: "JetBrains Mono", "SF Mono", Consolas, "Courier New", monospace;
-
-            --sp-4: 4px;
-            --sp-8: 8px;
-            --sp-12: 12px;
-            --sp-16: 16px;
-            --sp-24: 24px;
-            --sp-32: 32px;
-            --sp-40: 40px;
-            --sp-64: 64px;
-
-            --rad-sm: 3px;
-            --rad-md: 5px;
-            --rad-lg: 8px;
-            --rad-pill: 9999px;
-        }
-
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --papel: #12100D;
-                --hoja: #1C1916;
-                --tinta: #F2EEE8;
-                --media: #A39A8F;
-                --suave: #746C63;
-                --linea: #35302A;
-                --linea-f: #262220;
-                --metal: #272320;
-                --acento: #D9A05B;
-                --acento-tenue: #2B2117;
-                --ambar: #F59E0B;
-                --ambar-tenue: #451A03;
-                --rojo: #FB7185;
-                --rojo-tenue: #4C0519;
-                --verde: #34D399;
-                --verde-tenue: #022C22;
-            }
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            box-shadow: none !important; /* Regla estricta: Cero sombras */
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        body {
-            background-color: var(--papel);
-            color: var(--tinta);
-            font-family: var(--font-body);
-            font-size: 16px;
-            line-height: 1.6;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-
-        :focus-visible {
-            outline: 2px solid var(--acento);
-            outline-offset: 2px;
-        }
-
-        .container {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: var(--sp-24) var(--sp-24) calc(var(--sp-64) + env(safe-area-inset-bottom));
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-24);
-        }
-
-        .barra {
-            position: sticky;
-            top: 0;
-            z-index: 20;
-            background-color: var(--hoja);
-            border-bottom: 1px solid var(--linea);
-        }
-
-        .barra-dentro {
-            max-width: 1040px;
-            margin: 0 auto;
-            padding: var(--sp-12) var(--sp-24);
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: var(--sp-12) var(--sp-16);
-        }
-
-        .marca-app {
-            font-family: var(--font-title);
-            font-size: 19px;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            color: var(--tinta);
-        }
-
-        .marca-app span {
-            font-family: var(--font-body);
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--media);
-            margin-left: var(--sp-12);
-            letter-spacing: 0;
-        }
-
-        .barra-derecha {
-            margin-left: auto;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: var(--sp-12);
-        }
-
-        @media (max-width: 700px) {
-            .barra-derecha { margin-left: 0; width: 100%; }
-            .marca-app span { display: block; margin-left: 0; }
-        }
-
-        h1 {
-            font-family: var(--font-title);
-            font-size: 40px;
-            font-weight: 700;
-            letter-spacing: -0.022em;
-            line-height: 1.1;
-            color: var(--tinta);
-        }
-
-        h2 {
-            font-family: var(--font-title);
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: -0.01em;
-            color: var(--tinta);
-        }
-
-        .rotulo {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-weight: 600;
-            color: var(--suave);
-        }
-
-        /* ---------- Encabezado ---------- */
-
-        .header {
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-12);
-            padding: var(--sp-24);
-            background-color: var(--hoja);
-            border-radius: var(--rad-lg);
-            border: 1px solid var(--linea-f);
-        }
-
-        .header-top {
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-4);
-        }
-
-        .subtitle {
-            color: var(--media);
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .model-info-container {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: var(--sp-12);
-            margin-top: var(--sp-8);
-            padding-top: var(--sp-16);
-            border-top: 1px solid var(--linea-f);
-        }
-
-        .model-info {
-            font-family: var(--font-mono);
-            font-size: 10.5px;
-            color: var(--media);
-            background-color: var(--metal);
-            border: 1px solid var(--linea);
-            padding: 4px 9px;
-            border-radius: var(--rad-sm);
-            font-weight: 500;
-            letter-spacing: 0.02em;
-        }
-
-        .privacy-note {
-            font-size: 13px;
-            color: var(--media);
-        }
-
-        .pill-offline {
-            display: inline-flex;
-            align-items: center;
-            gap: 7px;
-            font-family: var(--font-mono);
-            font-size: 10.5px;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            color: var(--verde);
-            background-color: var(--verde-tenue);
-            border: 1px solid var(--verde);
-            padding: 4px 10px;
-            border-radius: var(--rad-pill);
-            white-space: nowrap;
-        }
-
-        .pill-offline::before {
-            content: '';
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            background-color: var(--verde);
-            flex: none;
-        }
-
-        /* ---------- Selector de casos ---------- */
-
-        .casos {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: var(--sp-8) var(--sp-16);
-            padding: var(--sp-12) 0;
-            border-bottom: 1px solid var(--linea-f);
-        }
-
-        .casos-botones {
-            display: flex;
-            flex-wrap: wrap;
-            gap: var(--sp-8);
-        }
-
-        .caso-btn {
-            font-family: var(--font-mono);
-            font-size: 11.5px;
-            font-weight: 600;
-            letter-spacing: 0.02em;
-            padding: 6px 11px;
-            border-radius: var(--rad-sm);
-            border: 1px solid var(--linea);
-            background-color: var(--hoja);
-            color: var(--media);
-        }
-
-        .caso-btn[aria-pressed="true"] {
-            background-color: var(--acento);
-            border-color: var(--acento);
-            color: #FFFFFF;
-        }
-
-        /* ---------- Captura ---------- */
-
-        .paneles {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: var(--sp-16);
-        }
-
-        @media (min-width: 860px) {
-            .paneles { grid-template-columns: 1fr 1fr; }
-        }
-
-        .panel {
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-12);
-            padding: var(--sp-16) var(--sp-16) var(--sp-16);
-            background-color: var(--hoja);
-            border: 1px solid var(--linea);
-            border-radius: var(--rad-lg);
-        }
-
-        textarea {
-            font-family: var(--font-body);
-            font-size: 15px;
-            line-height: 1.55;
-            color: var(--tinta);
-            background-color: var(--papel);
-            border: 1px solid var(--linea);
-            border-radius: var(--rad-md);
-            padding: var(--sp-16);
-            width: 100%;
-            min-height: 116px;
-            resize: vertical;
-        }
-
-        .btn-group {
-            display: flex;
-            gap: var(--sp-12);
-            flex-direction: column;
-        }
-
-        @media (min-width: 480px) {
-            .btn-group { flex-direction: row; }
-            .btn-group button { flex: 1; }
-        }
-
-        button {
-            font-family: var(--font-body);
-            font-size: 14.5px;
-            font-weight: 600;
-            border-radius: var(--rad-sm);
-            padding: 11px var(--sp-16);
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: opacity 0.2s ease, transform 0.1s ease;
-            text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            letter-spacing: 0.01em;
-        }
-
-        button:active { transform: scale(0.98); }
-
-        button:disabled {
-            background-color: var(--metal);
-            color: var(--suave);
-            cursor: not-allowed;
-            border-color: transparent;
-            transform: none;
-        }
-
-        .btn-primary {
-            background-color: var(--acento);
-            color: #FFFFFF;
-        }
-
-        .btn-secondary {
-            background-color: var(--hoja);
-            border-color: var(--linea);
-            color: var(--tinta);
-        }
-
-        .status-line {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--suave);
-            min-height: 16px;
-            letter-spacing: 0.03em;
-        }
-
-        /* ---------- Veredicto ---------- */
-
-        .verdict {
-            display: flex;
-            flex-direction: column;
-            padding: var(--sp-16) var(--sp-24);
-            border-radius: var(--rad-lg);
-            gap: var(--sp-8);
-            border: 1px solid transparent;
-        }
-
-        .verdict-header {
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-        }
-
-        .verdict-rotulo {
-            font-family: var(--font-mono);
-            font-size: 10.5px;
-            text-transform: uppercase;
-            font-weight: 700;
-            padding: 4px 9px;
-            border-radius: var(--rad-sm);
-            letter-spacing: 0.05em;
-            color: #FFFFFF;
-        }
-
-        .verdict-texto {
-            font-size: 18px;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-
-        .verdict-continua {
-            font-size: 14px;
-            font-weight: 600;
-            opacity: 0.8;
-            margin-top: var(--sp-4);
-        }
-
-        .v-vigente { border-color: var(--verde); }
-        .v-vigente .verdict-rotulo { background-color: var(--verde); }
-        .v-vigente .verdict-texto, .v-vigente .verdict-continua { color: var(--verde); }
-
-        .v-por-vencer { background-color: var(--ambar-tenue); border-color: var(--ambar); }
-        .v-por-vencer .verdict-rotulo { background-color: var(--ambar); }
-        .v-por-vencer .verdict-texto, .v-por-vencer .verdict-continua { color: var(--ambar); }
-
-        .v-vencida { background-color: var(--rojo-tenue); border-color: var(--rojo); }
-        .v-vencida .verdict-rotulo { background-color: var(--rojo); }
-        .v-vencida .verdict-texto, .v-vencida .verdict-continua { color: var(--rojo); }
-
-        .v-no-evaluable { background-color: var(--ambar-tenue); border-color: var(--ambar); }
-        .v-no-evaluable .verdict-rotulo { background-color: var(--ambar); }
-        .v-no-evaluable .verdict-texto, .v-no-evaluable .verdict-continua { color: var(--ambar); }
-
-        /* ---------- El cotejo ---------- */
-
-        .cotejo {
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-12);
-            padding: var(--sp-24);
-            border-radius: var(--rad-lg);
-            background-color: var(--rojo-tenue);
-            border: 1px solid var(--rojo);
-        }
-
-        .cotejo h2 { color: var(--rojo); font-size: 18px; }
-
-        .cotejo-caras {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: var(--sp-12);
-        }
-
-        @media (min-width: 620px) {
-            .cotejo-caras { grid-template-columns: 1fr 1fr; }
-        }
-
-        .cotejo-cara {
-            background-color: var(--hoja);
-            border: 1px solid var(--linea);
-            border-radius: var(--rad-md);
-            padding: var(--sp-16);
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-4);
-        }
-
-        .cotejo-cara .valor {
-            font-family: var(--font-mono);
-            font-size: 16px;
-            font-weight: 500;
-            word-break: break-word;
-        }
-
-        .cotejo-nota { font-size: 14px; color: var(--rojo); font-weight: 600; }
-
-        /* ---------- Pregunta por lo que falta ---------- */
-
-        .pregunta {
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-4);
-            padding: var(--sp-16) var(--sp-24);
-            border-radius: var(--rad-md);
-            background-color: var(--acento-tenue);
-            border: 1px solid var(--acento);
-            color: var(--acento);
-        }
-
-        .pregunta strong { font-weight: 700; }
-
-        /* ---------- Columnas de datos ---------- */
-
-        .columnas {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: var(--sp-16);
-            align-items: start;
-        }
-
-        @media (min-width: 860px) {
-            .columnas { grid-template-columns: 1fr 1fr; }
-        }
-
-        .columna { display: flex; flex-direction: column; gap: var(--sp-12); }
-
-        .columna-titulo { display: flex; flex-direction: column; gap: 1px; padding-left: 2px; }
-        .columna-titulo .de-donde { font-size: 13px; color: var(--media); }
-
-        .data-list {
-            display: flex;
-            flex-direction: column;
-            background-color: var(--hoja);
-            border-radius: var(--rad-lg);
-            border: 1px solid var(--linea);
-            overflow: hidden;
-        }
-
-        .data-row {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            padding: 10px var(--sp-16);
-            border-bottom: 1px solid var(--linea-f);
-        }
-
-        .data-row:last-child { border-bottom: none; }
-
-        .data-row.en-conflicto { background-color: var(--rojo-tenue); }
-
-        .data-label-group {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: var(--sp-12);
-            width: 100%;
-        }
-
-        .data-label {
-            font-size: 11px;
-            color: var(--suave);
-            text-transform: uppercase;
-            font-weight: 600;
-            letter-spacing: 0.05em;
-        }
-
-        .data-label .obligatorio { color: var(--acento); }
-
-        .data-value {
-            font-family: var(--font-mono);
-            font-size: 16px;
-            color: var(--tinta);
-            font-weight: 500;
-            font-variant-numeric: tabular-nums;
-            word-break: break-word;
-            line-height: 1.5;
-        }
-
-        .data-value.vacio { color: var(--suave); font-style: italic; }
-        .data-value.alerta { color: var(--ambar); }
-        .data-value.malo { color: var(--rojo); }
-
-        .porque {
-            font-size: 13px;
-            color: var(--media);
-            font-family: var(--font-body);
-        }
-
-        /* Marcas de procedencia y de confianza */
-        .data-badge {
-            font-family: var(--font-mono);
-            font-size: 9.5px;
-            text-transform: uppercase;
-            font-weight: 600;
-            border-radius: var(--rad-sm);
-            padding: 3px 7px;
-            white-space: nowrap;
-            letter-spacing: 0.02em;
-            flex: none;
-        }
-
-        .badge-leido      { background-color: var(--metal); border: 1px solid var(--linea); color: var(--tinta); }
-        .badge-noleido    { background-color: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar); }
-        .badge-confirmado { background-color: var(--verde-tenue); border: 1px solid var(--verde); color: var(--verde); }
-        .badge-reportado  { background-color: var(--metal); border: 1px solid var(--linea); color: var(--media); }
-        .badge-estimado   { background-color: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar); }
-        .badge-falta      { background-color: transparent; border: 1px dashed var(--linea); color: var(--suave); }
-        .badge-conflicto  { background-color: var(--rojo); border: 1px solid var(--rojo); color: #FFFFFF; }
-
-        /* ---------- Avisos, huérfanos, crudo ---------- */
-
-        .aviso-bloque {
-            background-color: var(--ambar-tenue);
-            color: var(--ambar);
-            padding: var(--sp-16) var(--sp-24);
-            border-radius: var(--rad-md);
-            font-weight: 500;
-            font-size: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-8);
-        }
-
-        .huerfanos-bloque {
-            background-color: var(--hoja);
-            border: 1px solid var(--linea);
-            padding: var(--sp-24);
-            border-radius: var(--rad-md);
-        }
-
-        .huerfano { display: flex; flex-direction: column; gap: var(--sp-12); }
-        .huerfano + .huerfano { margin-top: var(--sp-24); padding-top: var(--sp-24); border-top: 1px solid var(--linea-f); }
-
-        .huerfano .fecha {
-            font-family: var(--font-mono);
-            font-size: 20px;
-            font-weight: 600;
-            color: var(--tinta);
-        }
-
-        .huerfanos-botones { display: flex; flex-direction: column; gap: var(--sp-12); }
-
-        @media (min-width: 480px) {
-            .huerfanos-botones { flex-direction: row; }
-        }
-
-        .btn-small { padding: 12px var(--sp-16); font-size: 14px; }
-
-        details {
-            background-color: var(--hoja);
-            border-radius: var(--rad-md);
-            border: 1px solid var(--linea-f);
-            overflow: hidden;
-        }
-
-        summary {
-            font-size: 13px;
-            color: var(--media);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 600;
-            cursor: pointer;
-            padding: var(--sp-16) var(--sp-24);
-            list-style: none;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--sp-12);
-        }
-
-        summary::-webkit-details-marker { display: none; }
-        summary::after { content: '+'; font-size: 18px; font-weight: 400; }
-        details[open] summary::after { content: '\2212'; }
-
-        pre {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            background-color: var(--papel);
-            color: var(--media);
-            padding: var(--sp-24);
-            overflow-x: auto;
-            border-top: 1px solid var(--linea-f);
-            line-height: 1.6;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .footer-action {
-            display: flex;
-            flex-direction: column;
-            gap: var(--sp-12);
-        }
-
-        .btn-full { width: 100%; }
-
-        .motivo-bloqueo {
-            font-size: 14px;
-            color: var(--rojo);
-            font-weight: 600;
-            text-align: center;
-            padding: var(--sp-12) var(--sp-16);
-            background-color: var(--rojo-tenue);
-            border-radius: var(--rad-md);
-        }
-
-        .motivo-bloqueo ul { margin: var(--sp-8) 0 0; padding-left: 1.2em; text-align: left; font-weight: 500; }
-
-        .aviso-servidor {
-            padding: var(--sp-16) var(--sp-24);
-            border-radius: var(--rad-md);
-            background-color: var(--ambar-tenue);
-            color: var(--ambar);
-            border: 1px solid var(--ambar);
-            font-size: 15px;
-        }
-
-        .aviso-servidor code {
-            font-family: var(--font-mono);
-            font-size: 13px;
-        }
-
-        .vacio-total {
-            color: var(--suave);
-            font-style: italic;
-        }
-
-        .huella {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            gap: var(--sp-4) var(--sp-16);
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--media);
-            padding: var(--sp-16) var(--sp-24);
-            border-top: 1px solid var(--linea-f);
-        }
-
-        .huella dt { color: var(--suave); text-transform: uppercase; letter-spacing: 0.05em; }
-        .huella dd { margin: 0; word-break: break-all; color: var(--tinta); }
-
-        [hidden] { display: none !important; }
-    </style>
+    <link rel="stylesheet" href="/tipografias/tipografias.css">
+<style>
+  /* Neo-Glass, escrito a mano. Sin Tailwind, sin CDN, sin iconos remotos: la app tiene
+     que verse igual con el cable desenchufado, que es como se graba el video. */
+  :root {
+    --fondo: #F1F5F9;
+    --superficie: #FFFFFF;
+    --tinta: #0F172A;
+    --media: #475569;
+    --suave: #94A3B8;
+    --linea: #E2E8F0;
+    --linea-f: #F1F5F9;
+
+    --noche: #0B1121;
+    --noche-2: #131C31;
+    --noche-linea: #1E293B;
+    --noche-texto: #CBD5E1;
+
+    --primario: #2563EB;
+    --primario-claro: #3B82F6;
+    --primario-tenue: #EFF6FF;
+    --acento: #0891B2;
+
+    --verde: #059669;
+    --verde-tenue: #ECFDF5;
+    --ambar: #B45309;
+    --ambar-tenue: #FFFBEB;
+    --rojo: #BE123C;
+    --rojo-tenue: #FFF1F2;
+
+    --sombra: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.14);
+    --sombra-alta: 0 2px 4px rgba(15,23,42,.04), 0 18px 40px -16px rgba(15,23,42,.20);
+
+    --display: "Archivo", "Segoe UI", system-ui, sans-serif;
+    --texto: "Public Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "JetBrains Mono", Consolas, monospace;
+
+    --r-s: 6px;
+    --r-m: 10px;
+    --r-l: 16px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fondo: #080D18;
+      --superficie: #111827;
+      --tinta: #E8EDF5;
+      --media: #9AA8BF;
+      --suave: #64748B;
+      --linea: #1F2937;
+      --linea-f: #161E2C;
+      --primario-tenue: #12203A;
+      --verde-tenue: #0A2A21;
+      --ambar-tenue: #2A1F0C;
+      --rojo-tenue: #2C0F1A;
+      --sombra: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+      --sombra-alta: 0 2px 4px rgba(0,0,0,.4), 0 18px 40px -16px rgba(0,0,0,.7);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background-color: var(--fondo);
+    /* Cuadricula tecnologica muy tenue: da textura sin competir con los datos. */
+    background-image: radial-gradient(rgba(100,116,139,.18) 1px, transparent 1px);
+    background-size: 34px 34px;
+    color: var(--tinta);
+    font: 15px/1.55 var(--texto);
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  :focus-visible { outline: 2px solid var(--primario-claro); outline-offset: 2px; }
+
+  h1, h2, h3 { font-family: var(--display); font-weight: 700; letter-spacing: -.015em; }
+
+  .rotulo {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--suave);
+  }
+
+  /* ---------------------------------------------------------------- barra */
+
+  .nav {
+    background: var(--noche);
+    border-bottom: 1px solid var(--noche-linea);
+    position: sticky; top: 0; z-index: 40;
+  }
+
+  .nav-dentro {
+    max-width: 1380px; margin: 0 auto;
+    padding: 10px 20px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+  }
+
+  .logo {
+    width: 34px; height: 34px; border-radius: 9px; flex: none;
+    background: linear-gradient(135deg, var(--primario-claro), var(--acento));
+    display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 0 18px rgba(59,130,246,.35);
+  }
+  .logo svg { width: 19px; height: 19px; stroke: #fff; fill: none; stroke-width: 1.7; }
+
+  .nav-marca { display: flex; flex-direction: column; line-height: 1.15; }
+  .nav-marca b { font-family: var(--display); font-size: 17px; color: #fff; letter-spacing: -.02em; }
+  .nav-marca span {
+    font-family: var(--mono); font-size: 9.5px; letter-spacing: .14em;
+    text-transform: uppercase; color: #38BDF8;
+  }
+
+  .nav-derecha { margin-left: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+  .pastilla {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+    padding: 5px 11px; border-radius: 999px; white-space: nowrap;
+    background: rgba(148,163,184,.10); border: 1px solid var(--noche-linea);
+    color: var(--noche-texto);
+  }
+  .pastilla svg { width: 12px; height: 12px; }
+  .pastilla.viva { background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.35); color: #34D399; }
+  .punto { width: 6px; height: 6px; border-radius: 50%; background: #34D399; flex: none; animation: latido 2s infinite; }
+  @keyframes latido { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+
+  .nav-nota { font-size: 11.5px; color: #64748B; }
+  @media (max-width: 900px) { .nav-nota { display: none; } }
+
+  /* ---------------------------------------------------------------- lienzo */
+
+  .lienzo {
+    max-width: 1380px; margin: 0 auto;
+    padding: 16px 20px 72px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .cristal {
+    background: color-mix(in srgb, var(--superficie) 72%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid var(--linea);
+    border-radius: var(--r-l);
+    box-shadow: var(--sombra);
+  }
+
+  .franja {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px;
+    padding: 10px 16px;
+  }
+
+  .tuberia {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: var(--mono); font-size: 10.5px;
+    background: var(--noche); color: #94A3B8;
+    padding: 5px 11px; border-radius: var(--r-s);
+  }
+  .tuberia b { color: #38BDF8; font-weight: 500; }
+
+  .casos-botones { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+
+  .caso-btn {
+    font-family: var(--mono); font-size: 11px; font-weight: 600;
+    padding: 6px 11px; border-radius: var(--r-s);
+    border: 1px solid var(--linea); background: var(--superficie); color: var(--media);
+    cursor: pointer; transition: all .18s ease;
+  }
+  .caso-btn:hover { border-color: var(--suave); }
+  .caso-btn[aria-pressed="true"] {
+    background: var(--noche); border-color: var(--noche); color: #fff;
+  }
+
+  .aviso-servidor {
+    padding: 12px 16px; border-radius: var(--r-m); font-size: 14px;
+    background: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar);
+  }
+  .aviso-servidor code { font-family: var(--mono); font-size: 12.5px; }
+
+  /* ---------------------------------------------------------------- rejilla */
+
+  .obra { display: grid; grid-template-columns: 1fr; gap: 16px; align-items: start; }
+  @media (min-width: 1080px) { .obra { grid-template-columns: minmax(340px, 4fr) minmax(520px, 8fr); } }
+
+  .pila { display: flex; flex-direction: column; gap: 16px; }
+
+  .tarjeta {
+    background: var(--superficie);
+    border: 1px solid var(--linea);
+    border-radius: var(--r-l);
+    box-shadow: var(--sombra);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tarjeta > .filo { position: absolute; inset: 0 0 auto; height: 2px; }
+  .filo.azul { background: linear-gradient(90deg, var(--primario-claro), var(--acento)); }
+  .filo.cian { background: linear-gradient(90deg, var(--acento), #34D399); }
+
+  .tarjeta-cabeza {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px 10px;
+  }
+  .tarjeta-cabeza h2 { font-size: 12px; letter-spacing: .06em; text-transform: uppercase; }
+  .icono {
+    width: 28px; height: 28px; border-radius: 8px; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--primario-tenue); color: var(--primario);
+  }
+  .icono.cian { background: #ECFEFF; color: var(--acento); }
+  @media (prefers-color-scheme: dark) { .icono.cian { background: #0C2A31; } }
+  .icono svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+  .tarjeta-cuerpo { padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* ---------------------------------------------------------------- terminal */
+
+  .terminal { position: relative; }
+
+  textarea#dictado {
+    width: 100%; min-height: 138px; resize: vertical;
+    background: var(--noche); color: #6EE7B7;
+    border: 1px solid var(--noche-linea); border-radius: var(--r-m);
+    padding: 16px 16px 16px 16px;
+    font: 13px/1.7 var(--mono);
+    box-shadow: inset 0 1px 6px rgba(0,0,0,.35);
+  }
+  textarea#dictado::placeholder { color: #475569; font-style: italic; }
+
+  .terminal-etiqueta {
+    position: absolute; top: 8px; right: 12px;
+    font-family: var(--mono); font-size: 9px; letter-spacing: .1em;
+    text-transform: uppercase; color: #475569; pointer-events: none;
+  }
+
+  .ondas { display: flex; align-items: flex-end; gap: 3px; height: 16px; margin-left: auto; opacity: 0; transition: opacity .25s; }
+  .ondas.viva { opacity: 1; }
+  .ondas i { width: 3px; background: var(--primario-claro); border-radius: 3px; animation: onda 1s infinite ease-in-out; }
+  .ondas i:nth-child(2) { animation-delay: .15s; }
+  .ondas i:nth-child(3) { animation-delay: .3s; }
+  .ondas i:nth-child(4) { animation-delay: .45s; }
+  @keyframes onda { 0%,100% { height: 20%; } 50% { height: 100%; } }
+
+  /* ---------------------------------------------------------------- documento */
+
+  .visor {
+    position: relative; overflow: hidden;
+    height: 152px; border-radius: var(--r-m);
+    background: var(--linea-f); border: 1px solid var(--linea);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .visor img { width: 100%; height: 100%; object-fit: cover; }
+  .visor-vacio { display: flex; flex-direction: column; align-items: center; gap: 8px; color: var(--suave); }
+  .visor-vacio svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.6; }
+  .visor-vacio span { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+
+  .malla {
+    position: absolute; inset: 0; pointer-events: none; opacity: .5;
+    background-image: linear-gradient(rgba(8,145,178,.16) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(8,145,178,.16) 1px, transparent 1px);
+    background-size: 18px 18px;
+  }
+  .esquina { position: absolute; width: 10px; height: 10px; border: 2px solid var(--acento); }
+  .esquina.a { top: 7px; left: 7px; border-right: 0; border-bottom: 0; }
+  .esquina.b { top: 7px; right: 7px; border-left: 0; border-bottom: 0; }
+  .esquina.c { bottom: 7px; left: 7px; border-right: 0; border-top: 0; }
+  .esquina.d { bottom: 7px; right: 7px; border-left: 0; border-top: 0; }
+
+  .laser {
+    position: absolute; left: 0; width: 100%; height: 2px; border-radius: 2px;
+    background: #22D3EE; box-shadow: 0 0 12px 2px rgba(34,211,238,.9), 0 0 26px 6px rgba(59,130,246,.5);
+    animation: barrido 2.2s ease-in-out infinite;
+  }
+  @keyframes barrido { 0% { top: -4%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 104%; opacity: 0; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .laser, .ondas i, .punto { animation: none; }
+    .laser { top: 50%; }
+  }
+
+  /* ---------------------------------------------------------------- botones */
+
+  .botones { display: flex; gap: 8px; flex-wrap: wrap; }
+  .botones button { flex: 1 1 auto; }
+
+  button {
+    font: 600 13.5px var(--texto);
+    padding: 10px 15px; border-radius: var(--r-s);
+    border: 1px solid transparent; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all .16s ease;
+  }
+  button svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; flex: none; }
+  button:active { transform: translateY(1px); }
+  button:disabled { background: var(--linea-f); color: var(--suave); border-color: var(--linea); cursor: not-allowed; transform: none; }
+
+  .btn-primary { background: var(--primario); color: #fff; box-shadow: 0 6px 16px -8px rgba(37,99,235,.9); }
+  .btn-primary:hover:not(:disabled) { background: var(--primario-claro); }
+  .btn-secondary { background: var(--superficie); border-color: var(--linea); color: var(--tinta); }
+  .btn-secondary:hover:not(:disabled) { border-color: var(--suave); }
+  .btn-noche { background: var(--noche); color: #fff; }
+  .btn-noche:hover:not(:disabled) { background: var(--noche-2); }
+  .btn-small { padding: 7px 11px; font-size: 12.5px; }
+  .btn-full { width: 100%; }
+
+  .status-line { font-family: var(--mono); font-size: 10.5px; color: var(--suave); min-height: 15px; }
+
+  /* ---------------------------------------------------------------- validacion */
+
+  .derecha { position: relative; display: flex; flex-direction: column; gap: 16px; }
+
+  .espera {
+    position: absolute; inset: 0; z-index: 15; border-radius: var(--r-l);
+    background: color-mix(in srgb, var(--superficie) 95%, transparent);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    border: 1px solid var(--linea);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+    text-align: center; padding: 24px;
+    transition: opacity .4s ease;
+  }
+  .espera svg { width: 44px; height: 44px; stroke: var(--suave); fill: none; stroke-width: 1.4; }
+  .espera h3 { font-size: 16px; color: var(--media); }
+  .espera p { font-size: 13.5px; color: var(--suave); max-width: 42ch; }
+
+  /* banda del veredicto */
+  .verdict {
+    display: flex; align-items: flex-start; gap: 14px;
+    padding: 16px 18px 16px 20px;
+    border-radius: var(--r-l);
+    background: var(--superficie); border: 1px solid var(--linea);
+    box-shadow: var(--sombra);
+    position: relative; overflow: hidden;
+  }
+  .verdict::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px; background: var(--suave); }
+  .verdict-icono {
+    width: 40px; height: 40px; border-radius: 50%; flex: none;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--linea-f); color: var(--media);
+  }
+  .verdict-icono svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .verdict-cuerpo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .verdict-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .verdict-titulo { font-family: var(--display); font-size: 19px; }
+  .verdict-rotulo {
+    font-family: var(--mono); font-size: 9.5px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: var(--r-s); color: #fff; background: var(--suave);
+  }
+  .verdict-texto { font-size: 14.5px; color: var(--media); }
+  .verdict-continua { font-size: 13px; font-weight: 600; }
+  .verdict-tiempo {
+    margin-left: auto; text-align: right; flex: none;
+    font-family: var(--mono); font-size: 10px; color: var(--suave);
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .verdict-tiempo b { font-size: 13px; color: var(--primario); }
+
+  .v-vigente::before { background: var(--verde); }
+  .v-vigente .verdict-icono { background: var(--verde-tenue); color: var(--verde); }
+  .v-vigente .verdict-rotulo { background: var(--verde); }
+  .v-vigente .verdict-continua { color: var(--verde); }
+
+  .v-por-vencer::before, .v-no-evaluable::before { background: var(--ambar); }
+  .v-por-vencer .verdict-icono, .v-no-evaluable .verdict-icono { background: var(--ambar-tenue); color: var(--ambar); }
+  .v-por-vencer .verdict-rotulo, .v-no-evaluable .verdict-rotulo { background: var(--ambar); }
+  .v-por-vencer .verdict-continua, .v-no-evaluable .verdict-continua { color: var(--ambar); }
+
+  .v-vencida::before { background: var(--rojo); }
+  .v-vencida .verdict-icono { background: var(--rojo-tenue); color: var(--rojo); }
+  .v-vencida .verdict-rotulo { background: var(--rojo); }
+  .v-vencida .verdict-continua { color: var(--rojo); }
+
+  /* ---------------------------------------------------------------- mapeo */
+
+  .mapa { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+
+  .mapa-cabeza {
+    display: flex; align-items: center; gap: 10px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--linea-f);
+  }
+  .mapa-cabeza h2 { font-size: 15px; }
+  .mapa-cabeza .icono { background: var(--noche); color: #fff; }
+
+  #mapeo { display: flex; flex-direction: column; gap: 14px; }
+  .par { display: grid; grid-template-columns: 1fr; gap: 8px; position: relative; }
+  @media (min-width: 720px) {
+    .par { grid-template-columns: 1fr 52px 1fr; align-items: center; gap: 0; }
+  }
+
+  .lado { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  .lado .rotulo { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+  .marca-ent {
+    font-family: var(--mono); font-size: 8.5px; letter-spacing: .06em;
+    padding: 2px 5px; border-radius: 3px;
+    background: var(--primario-tenue); color: var(--primario); font-weight: 700;
+  }
+  .caja {
+    padding: 11px 13px; border-radius: var(--r-m);
+    border: 1px solid var(--linea); background: var(--linea-f);
+    font-size: 14px; word-break: break-word; transition: all .3s ease;
+  }
+  .caja.doc { background: var(--superficie); font-family: var(--mono); font-size: 12.5px; }
+  .caja.vacia { color: var(--suave); font-style: italic; }
+
+  .nexo { display: none; position: relative; height: 100%; min-height: 46px; }
+  @media (min-width: 720px) { .nexo { display: block; } }
+  .nexo::before {
+    content: ""; position: absolute; top: 50%; left: 6px; right: 6px; height: 0;
+    border-top: 2px dashed var(--linea);
+    transition: border-color .3s ease;
+  }
+  .nexo i {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 12px; height: 12px; border-radius: 50%;
+    border: 2px solid var(--linea); background: var(--superficie);
+    transition: all .3s ease;
+  }
+
+  .par.ok .nexo::before { border-color: var(--verde); }
+  .par.ok .nexo i { border-color: var(--verde); background: var(--verde-tenue); box-shadow: 0 0 0 3px rgba(5,150,105,.14); }
+  .par.ok .caja.doc { border-color: var(--verde); }
+
+  .par.mal .nexo::before { border-color: var(--rojo); }
+  .par.mal .nexo i { border-color: var(--rojo); background: var(--rojo-tenue); box-shadow: 0 0 0 3px rgba(190,18,60,.16); animation: pulso 1.6s infinite; }
+  .par.mal .caja { background: var(--rojo-tenue); border-color: var(--rojo); }
+  @keyframes pulso { 0%,100% { box-shadow: 0 0 0 3px rgba(190,18,60,.16); } 50% { box-shadow: 0 0 0 7px rgba(190,18,60,.05); } }
+  @media (prefers-reduced-motion: reduce) { .par.mal .nexo i { animation: none; } }
+
+  .sello {
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 2px 7px; border-radius: 3px;
+  }
+  .sello.ok { background: var(--verde-tenue); color: var(--verde); border: 1px solid var(--verde); }
+  .sello.mal { background: var(--rojo-tenue); color: var(--rojo); border: 1px solid var(--rojo); }
+
+  .cotejo-nota { font-size: 13.5px; color: var(--rojo); font-weight: 600; }
+  .cotejo-acciones { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  /* ---------------------------------------------------------------- listas */
+
+  .columnas { display: grid; grid-template-columns: 1fr; gap: 14px; align-items: start; }
+  @media (min-width: 860px) { .columnas { grid-template-columns: 1fr 1fr; } }
+
+  .columna { display: flex; flex-direction: column; gap: 8px; }
+  .columna-titulo { display: flex; flex-direction: column; gap: 1px; }
+  .columna-titulo h2 { font-size: 14px; }
+  .columna-titulo .de-donde { font-size: 12.5px; color: var(--suave); }
+
+  .data-list {
+    display: flex; flex-direction: column;
+    background: var(--superficie); border: 1px solid var(--linea);
+    border-radius: var(--r-m); overflow: hidden;
+  }
+  .data-row { display: flex; flex-direction: column; gap: 3px; padding: 9px 13px; border-bottom: 1px solid var(--linea-f); }
+  .data-row:last-child { border-bottom: 0; }
+  .data-row.en-conflicto { background: var(--rojo-tenue); }
+  .data-label-group { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .data-label {
+    font-family: var(--mono); font-size: 9px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; color: var(--suave);
+  }
+  .data-label .obligatorio { color: var(--primario); }
+  .data-value { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; word-break: break-word; }
+  .data-value.vacio { color: var(--suave); font-style: italic; }
+  .data-value.alerta { color: var(--ambar); }
+  .data-value.malo { color: var(--rojo); }
+  .porque { font-size: 12.5px; color: var(--media); }
+  .vacio-total { color: var(--suave); font-style: italic; }
+
+  .data-badge {
+    font-family: var(--mono); font-size: 8.5px; font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase;
+    padding: 2px 6px; border-radius: 3px; white-space: nowrap; flex: none;
+  }
+  .badge-leido      { background: var(--linea-f); border: 1px solid var(--linea); color: var(--media); }
+  .badge-noleido    { background: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar); }
+  .badge-confirmado { background: var(--verde-tenue); border: 1px solid var(--verde); color: var(--verde); }
+  .badge-reportado  { background: var(--linea-f); border: 1px solid var(--linea); color: var(--media); }
+  .badge-estimado   { background: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar); }
+  .badge-falta      { background: transparent; border: 1px dashed var(--linea); color: var(--suave); }
+  .badge-conflicto  { background: var(--rojo); border: 1px solid var(--rojo); color: #fff; }
+
+  /* ---------------------------------------------------------------- avisos */
+
+  .pregunta {
+    display: flex; flex-direction: column; gap: 3px;
+    padding: 13px 16px; border-radius: var(--r-m);
+    background: var(--primario-tenue); border: 1px solid var(--primario); color: var(--primario);
+    font-size: 14px;
+  }
+  .aviso-bloque {
+    display: flex; flex-direction: column; gap: 6px;
+    padding: 13px 16px; border-radius: var(--r-m);
+    background: var(--ambar-tenue); border: 1px solid var(--ambar); color: var(--ambar);
+    font-size: 14px;
+  }
+  .huerfanos-bloque {
+    padding: 16px; border-radius: var(--r-m);
+    background: var(--superficie); border: 1px solid var(--linea);
+  }
+  .huerfano { display: flex; flex-direction: column; gap: 10px; }
+  .huerfano + .huerfano { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--linea-f); }
+  .huerfano .fecha { font-family: var(--mono); font-size: 19px; font-weight: 700; }
+  .huerfanos-botones { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  details { background: var(--superficie); border: 1px solid var(--linea); border-radius: var(--r-m); overflow: hidden; }
+  summary {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--media); cursor: pointer; padding: 12px 16px;
+    display: flex; align-items: center; justify-content: space-between; list-style: none;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; font-size: 16px; }
+  details[open] summary::after { content: "\2212"; }
+  pre {
+    font: 11.5px/1.6 var(--mono); color: var(--media);
+    background: var(--fondo); padding: 16px; border-top: 1px solid var(--linea-f);
+    white-space: pre-wrap; word-break: break-word; overflow-x: auto;
+  }
+  .huella {
+    display: grid; grid-template-columns: auto 1fr; gap: 3px 14px;
+    font: 10.5px var(--mono); color: var(--media);
+    padding: 14px 16px; border-top: 1px solid var(--linea-f);
+  }
+  .huella dt { color: var(--suave); text-transform: uppercase; letter-spacing: .06em; }
+  .huella dd { color: var(--tinta); word-break: break-all; }
+
+  .footer-action { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+  .footer-action button { min-width: 240px; }
+  .motivo-bloqueo {
+    width: 100%; font-size: 13.5px; color: var(--rojo); font-weight: 600;
+    padding: 11px 15px; border-radius: var(--r-m);
+    background: var(--rojo-tenue); border: 1px solid var(--rojo);
+  }
+  .motivo-bloqueo ul { margin: 6px 0 0; padding-left: 1.2em; font-weight: 500; }
+
+  /* ---------------------------------------------------------------- tuberia de IA */
+
+  .velo {
+    position: fixed; inset: 0; z-index: 60;
+    background: rgba(11,17,33,.82);
+    backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .velo-caja {
+    background: var(--superficie); border-radius: var(--r-l);
+    padding: 28px; width: 100%; max-width: 440px;
+    display: flex; flex-direction: column; gap: 20px;
+    box-shadow: var(--sombra-alta);
+  }
+  .velo-caja h2 { font-size: 19px; text-align: center; }
+  .velo-caja > p { font-size: 13.5px; color: var(--media); text-align: center; }
+  .paso { display: flex; align-items: center; gap: 12px; }
+  .paso-nodo {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    border: 2px solid var(--linea); color: var(--suave);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .35s ease;
+  }
+  .paso-nodo svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; }
+  .paso.activo .paso-nodo { border-color: var(--primario); background: var(--primario); color: #fff; box-shadow: 0 0 14px rgba(37,99,235,.45); }
+  .paso.listo .paso-nodo { border-color: var(--verde); background: var(--verde); color: #fff; box-shadow: none; }
+  .paso-cuerpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+  .paso-fila { display: flex; justify-content: space-between; gap: 10px; font-family: var(--mono); font-size: 10.5px; }
+  .paso-fila b { color: var(--tinta); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .paso-fila span { color: var(--suave); }
+  .paso.listo .paso-fila span { color: var(--verde); }
+  .paso-barra { height: 3px; border-radius: 3px; background: var(--linea-f); overflow: hidden; }
+  .paso-barra i { display: block; height: 100%; width: 100%; background: var(--primario);
+                  transform: scaleX(0); transform-origin: left; transition: transform .5s ease; }
+  .paso.listo .paso-barra i { background: var(--verde); }
+
+  [hidden] { display: none !important; }
+</style>
 </head>
 <body>
 
-    <header class="barra">
-        <div class="barra-dentro">
-            <h1 class="marca-app">Alcancía<span>Lectura de documentos en ventanilla</span></h1>
-            <div class="barra-derecha">
-                <span class="pill-offline">Sin conexión</span>
-                <span class="model-info" id="modelos">Whisper &middot; Qwen3 &middot; VisionPsy-Nano-460M</span>
-                <span class="privacy-note">Ningún dato del cliente sale de este equipo.</span>
-            </div>
+<nav class="nav">
+  <div class="nav-dentro">
+    <span class="logo" aria-hidden="true">
+      <svg viewBox="0 0 24 24"><path d="M12 3a5 5 0 0 0-5 5v4a5 5 0 0 0 5 5 5 5 0 0 0 5-5"/><path d="M12 7a1 1 0 0 0-1 1v4a1 1 0 0 0 2 0"/><path d="M4 12v-1a8 8 0 0 1 16 0v3"/><path d="M8 19c1.5 1.3 3 2 4.5 2"/></svg>
+    </span>
+    <span class="nav-marca">
+      <b>Alcancía</b>
+      <span>Ventanilla &middot; validación en el equipo</span>
+    </span>
+    <div class="nav-derecha">
+      <span class="pastilla viva"><i class="punto"></i>Sin conexión</span>
+      <span class="pastilla" id="modelos">Whisper &middot; Qwen3 &middot; VisionPsy-Nano-460M</span>
+      <span class="nav-nota">Ningún dato del cliente sale de este equipo.</span>
+    </div>
+  </div>
+</nav>
+
+<div class="lienzo">
+
+  <div class="aviso-servidor" id="aviso" hidden>
+    Esta es una copia guardada, sin servidor: se ven los cuatro casos ya medidos, pero no se puede
+    grabar al cliente ni leer una cédula nueva. Para eso hay que levantarlo con <code>node servidor.mjs</code>.
+  </div>
+
+  <section class="cristal franja" aria-label="Casos de ejemplo">
+    <span class="tuberia">Cadena: <b>Whisper-S &rarr; Qwen3-1.7B &rarr; VisionPsy</b></span>
+    <span class="rotulo">Casos medidos</span>
+    <div class="casos-botones" id="casos"></div>
+  </section>
+
+  <div class="obra">
+
+    <div class="pila">
+
+      <section class="tarjeta">
+        <span class="filo azul"></span>
+        <div class="tarjeta-cabeza">
+          <span class="icono" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v4"/></svg>
+          </span>
+          <h2>Atención al cliente</h2>
+          <span class="ondas" id="ondas" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
         </div>
-    </header>
-
-    <div class="container">
-
-        <div class="aviso-servidor" id="aviso" hidden>
-            Esta es una copia guardada, sin servidor: se ven los cuatro casos ya medidos, pero no se puede
-            grabar al cliente ni leer una cédula nueva. Para eso hay que levantarlo con <code>node servidor.mjs</code>.
+        <div class="tarjeta-cuerpo">
+          <div class="terminal">
+            <textarea id="dictado" placeholder="Esperando la voz del cliente en ventanilla…"></textarea>
+            <span class="terminal-etiqueta">Transcripción</span>
+          </div>
+          <div class="botones">
+            <button class="btn-noche" id="grabar">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="6" fill="currentColor" stroke="none"/></svg>
+              Grabar al cliente
+            </button>
+            <button class="btn-secondary" id="interpretar">Interpretar</button>
+          </div>
+          <div class="status-line" id="estadoVoz"></div>
         </div>
+      </section>
 
-        <section class="casos" aria-label="Casos de ejemplo">
-            <span class="rotulo">Casos medidos</span>
-            <div class="casos-botones" id="casos"></div>
-        </section>
-
-        <div class="paneles">
-
-            <section class="panel">
-                <span class="rotulo">Atención al cliente</span>
-                <textarea id="dictado" placeholder="Ej: Juana Pérez, cédula 8-123-456, quiere abrir cuenta de ahorros. Ingreso como 800 al mes, vive en La Chorrera."></textarea>
-                <div class="btn-group">
-                    <button class="btn-primary" id="grabar">Grabar al cliente</button>
-                    <button class="btn-secondary" id="interpretar">Interpretar</button>
-                </div>
-                <div class="status-line" id="estadoVoz"></div>
-            </section>
-
-            <section class="panel">
-                <span class="rotulo">Documento</span>
-                <p class="porque">La cédula confirma lo que el cliente dijo. Lo que no coincide, se marca.</p>
-                <div class="btn-group">
-                    <button class="btn-primary" id="tomarFoto">Tomar foto de la cédula</button>
-                    <button class="btn-secondary" id="subirArchivo">Subir archivo</button>
-                    <input type="file" id="imagen" accept="image/*" hidden>
-                </div>
-                <div class="status-line" id="estado"></div>
-            </section>
-
+      <section class="tarjeta">
+        <span class="filo cian"></span>
+        <div class="tarjeta-cabeza">
+          <span class="icono cian" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5 16c.8-1.4 2-2 3.5-2s2.7.6 3.5 2"/><path d="M15 10h4M15 14h4"/></svg>
+          </span>
+          <h2>Documento</h2>
         </div>
-
-        <section class="result-block" id="resultado" style="display:flex;flex-direction:column;gap:var(--sp-24);">
-
-            <div class="verdict" id="veredicto">
-                <div class="verdict-header">
-                    <span class="verdict-rotulo" id="veredictoRotulo"></span>
-                </div>
-                <div class="verdict-texto" id="veredictoTexto"></div>
-                <div class="verdict-continua" id="veredictoContinua"></div>
+        <div class="tarjeta-cuerpo">
+          <div class="visor" id="visor">
+            <div class="visor-vacio" id="visorVacio">
+              <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4V2M16 4V2M3 9h18"/></svg>
+              <span>Sin documento</span>
             </div>
-
-            <div class="cotejo" id="cotejo" hidden>
-                <h2 id="cotejoTitulo"></h2>
-                <div class="cotejo-caras">
-                    <div class="cotejo-cara">
-                        <span class="rotulo">Lo que dijo el cliente</span>
-                        <span class="valor" id="cotejoDicho"></span>
-                    </div>
-                    <div class="cotejo-cara">
-                        <span class="rotulo">Lo que dice la cédula</span>
-                        <span class="valor" id="cotejoLeido"></span>
-                    </div>
-                </div>
-                <p class="cotejo-nota" id="cotejoNota"></p>
-                <div class="huerfanos-botones">
-                    <button class="btn-secondary btn-small" id="cotejoTomarLeido">Quedarme con lo de la cédula</button>
-                    <button class="btn-secondary btn-small" id="cotejoPreguntar">Preguntarle al cliente</button>
-                </div>
-            </div>
-
-            <div class="pregunta" id="pregunta" hidden></div>
-
-            <div class="columnas">
-
-                <div class="columna">
-                    <div class="columna-titulo">
-                        <h2>Expediente del cliente</h2>
-                        <span class="de-donde">Lo que se dijo en la ventanilla</span>
-                    </div>
-                    <div class="data-list" id="expediente"></div>
-                </div>
-
-                <div class="columna">
-                    <div class="columna-titulo">
-                        <h2>Lo que dice la cédula</h2>
-                        <span class="de-donde">Leído del documento, sin rellenar huecos</span>
-                    </div>
-                    <div class="data-list" id="campos"></div>
-                </div>
-
-            </div>
-
-            <div class="aviso-bloque" id="avisos" hidden></div>
-
-            <div class="huerfanos-bloque" id="huerfanos" hidden></div>
-
-            <details>
-                <summary>Lo que leyó el modelo, tal cual</summary>
-                <pre id="textoLeido"></pre>
-                <dl class="huella" id="huella" hidden></dl>
-            </details>
-
-            <div class="footer-action">
-                <button class="btn-primary btn-full" id="continuar">Continuar con el trámite</button>
-                <div class="motivo-bloqueo" id="motivoBloqueo" hidden></div>
-            </div>
-
-        </section>
+            <div class="malla" aria-hidden="true"></div>
+            <span class="esquina a"></span><span class="esquina b"></span>
+            <span class="esquina c"></span><span class="esquina d"></span>
+            <div class="laser" id="laser" hidden aria-hidden="true"></div>
+          </div>
+          <p class="porque">La cédula confirma lo que el cliente dijo. Lo que no coincide, se marca.</p>
+          <div class="botones">
+            <button class="btn-primary" id="tomarFoto">
+              <svg viewBox="0 0 24 24"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.2"/></svg>
+              Tomar foto
+            </button>
+            <button class="btn-secondary" id="subirArchivo">Subir archivo</button>
+            <input type="file" id="imagen" accept="image/*" hidden>
+          </div>
+          <div class="status-line" id="estado"></div>
+        </div>
+      </section>
 
     </div>
+
+    <div class="derecha" id="resultado">
+
+      <div class="espera" id="espera">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+        <h3>Esperando la captura</h3>
+        <p>Dicta la atención y toma la foto de la cédula. Aquí aparece el cotejo entre lo que dijo el cliente y lo que dice su documento.</p>
+      </div>
+
+      <div class="verdict" id="veredicto">
+        <span class="verdict-icono" id="veredictoIcono" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16.2v.1"/></svg>
+        </span>
+        <span class="verdict-cuerpo">
+          <span class="verdict-fila">
+            <span class="verdict-titulo" id="veredictoTitulo">Sin documento</span>
+            <span class="verdict-rotulo" id="veredictoRotulo"></span>
+          </span>
+          <span class="verdict-texto" id="veredictoTexto"></span>
+          <span class="verdict-continua" id="veredictoContinua"></span>
+        </span>
+        <span class="verdict-tiempo" id="veredictoTiempo" hidden>
+          <span>Tiempo en el equipo</span>
+          <b id="veredictoMs">—</b>
+        </span>
+      </div>
+
+      <section class="tarjeta">
+        <div class="mapa">
+          <div class="mapa-cabeza">
+            <span class="icono" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 9h16M4 9l3-3M4 9l3 3"/><path d="M20 15H4m16 0l-3-3m3 3l-3 3"/></svg>
+            </span>
+            <h2>Cotejo &middot; lo dicho contra el documento</h2>
+          </div>
+
+          <div id="mapeo"></div>
+
+          <div id="cotejo" hidden>
+            <p class="cotejo-nota" id="cotejoNota"></p>
+            <div class="cotejo-acciones">
+              <button class="btn-secondary btn-small" id="cotejoTomarLeido">Quedarme con lo de la cédula</button>
+              <button class="btn-secondary btn-small" id="cotejoPreguntar">Preguntarle al cliente</button>
+            </div>
+          </div>
+          <span id="cotejoTitulo" hidden></span>
+          <span id="cotejoDicho" hidden></span>
+          <span id="cotejoLeido" hidden></span>
+        </div>
+      </section>
+
+      <div class="pregunta" id="pregunta" hidden></div>
+
+      <div class="columnas">
+        <div class="columna">
+          <div class="columna-titulo">
+            <h2>Expediente del cliente</h2>
+            <span class="de-donde">Lo que se dijo en la ventanilla</span>
+          </div>
+          <div class="data-list" id="expediente"></div>
+        </div>
+        <div class="columna">
+          <div class="columna-titulo">
+            <h2>Lo que dice la cédula</h2>
+            <span class="de-donde">Leído del documento, sin rellenar huecos</span>
+          </div>
+          <div class="data-list" id="campos"></div>
+        </div>
+      </div>
+
+      <div class="aviso-bloque" id="avisos" hidden></div>
+      <div class="huerfanos-bloque" id="huerfanos" hidden></div>
+
+      <details>
+        <summary>Lo que leyó el modelo, tal cual</summary>
+        <pre id="textoLeido"></pre>
+        <dl class="huella" id="huella" hidden></dl>
+      </details>
+
+      <div class="footer-action">
+        <div class="motivo-bloqueo" id="motivoBloqueo" hidden></div>
+        <button class="btn-primary" id="continuar">Continuar con el trámite</button>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<div class="velo" id="tuberia" hidden>
+  <div class="velo-caja">
+    <h2>Trabajando en este equipo</h2>
+    <p>Sin conexión. Los tiempos que ves son los reales, no una animación.</p>
+    <div class="paso" id="paso1">
+      <span class="paso-nodo"><svg viewBox="0 0 24 24"><path d="M3 12h2l2-6 3 12 3-9 2 5h6"/></svg></span>
+      <span class="paso-cuerpo">
+        <span class="paso-fila"><b>Whisper small</b><span id="paso1Estado">en espera</span></span>
+        <span class="paso-barra"><i id="paso1Barra"></i></span>
+      </span>
+    </div>
+    <div class="paso" id="paso2">
+      <span class="paso-nodo"><svg viewBox="0 0 24 24"><path d="M5 7h14M5 12h9M5 17h11"/></svg></span>
+      <span class="paso-cuerpo">
+        <span class="paso-fila"><b>Qwen3 1.7B</b><span id="paso2Estado">en espera</span></span>
+        <span class="paso-barra"><i id="paso2Barra"></i></span>
+      </span>
+    </div>
+    <div class="paso" id="paso3">
+      <span class="paso-nodo"><svg viewBox="0 0 24 24"><path d="M4 8V5h3M20 8V5h-3M4 16v3h3M20 16v3h-3"/><path d="M4 12h16"/></svg></span>
+      <span class="paso-cuerpo">
+        <span class="paso-fila"><b>VisionPsy 460M</b><span id="paso3Estado">en espera</span></span>
+        <span class="paso-barra"><i id="paso3Barra"></i></span>
+      </span>
+    </div>
+  </div>
+</div>
 
 <script>
 (function () {
@@ -963,7 +915,7 @@
         "kyc": {
           "estado": "vencida",
           "puedeSeguir": false,
-          "motivo": "La cédula venció hace 576 días (11-02-2025).",
+          "motivo": "La cédula venció hace 577 días (11-02-2025).",
           "faltan": [],
           "avisos": []
         },
@@ -1039,7 +991,7 @@
         ],
         "faltan": [],
         "razones": [
-          "La cédula venció hace 576 días (11-02-2025).",
+          "La cédula venció hace 577 días (11-02-2025).",
           "Lo que dijo el cliente no coincide con el documento en: Nombre completo."
         ],
         "puedeSeguir": false
@@ -1291,6 +1243,7 @@
 
     var estado = {
         texto: "",
+        ms: 0,
         huella: null,
         discrepancias: [],
         expediente: null,
@@ -1308,7 +1261,7 @@
 
     function adoptar(r) {
         if (!r) return;
-        ["expediente", "campos", "kyc", "cotejo", "conflictos", "razones", "puedeSeguir", "descartes", "textoLeido", "huella", "discrepancias"].forEach(function (k) {
+        ["expediente", "campos", "kyc", "cotejo", "conflictos", "razones", "puedeSeguir", "descartes", "textoLeido", "huella", "discrepancias", "ms"].forEach(function (k) {
             if (r[k] !== undefined) estado[k] = r[k];
         });
         pintar();
@@ -1379,10 +1332,7 @@
         var cot = $("cotejo");
         var c0 = (estado.conflictos || [])[0];
         if (c0) {
-            $("cotejoTitulo").textContent = c0.etiqueta + ": no coincide";
-            $("cotejoDicho").textContent = c0.dicho;
-            $("cotejoLeido").textContent = c0.leido;
-            $("cotejoNota").textContent = "Alcancía no elige por su cuenta. Lo resuelve una persona antes de seguir.";
+            $("cotejoNota").textContent = c0.etiqueta + ": Alcancía no elige por su cuenta. Lo resuelve una persona antes de seguir.";
             cot.hidden = false;
         } else {
             cot.hidden = true;
@@ -1397,18 +1347,58 @@
         };
         var ver = $("veredicto");
         if (!estado.kyc) {
-            ver.className = "verdict v-no-evaluable";
-            $("veredictoRotulo").textContent = "sin documento";
+            ver.className = "verdict";
+            $("veredictoTitulo").textContent = "Sin documento todavía";
+            $("veredictoRotulo").textContent = "en espera";
             $("veredictoTexto").textContent = "Falta la foto de la cédula para saber si está vigente.";
             $("veredictoContinua").textContent = "El trámite no puede continuar todavía.";
         } else {
             ver.className = "verdict " + (clases[estado.kyc.estado] || "v-no-evaluable");
+            $("veredictoTitulo").textContent = estado.puedeSeguir ? "Trámite aprobado" : "Trámite detenido";
             $("veredictoRotulo").textContent = estado.kyc.estado;
             $("veredictoTexto").textContent = estado.kyc.motivo;
             $("veredictoContinua").textContent = estado.puedeSeguir
                 ? "El trámite puede continuar."
                 : "El trámite se detiene.";
         }
+
+        // El overlay de espera se retira en cuanto hay algo que enseñar.
+        $("espera").hidden = !!estado.expediente;
+
+        // El tiempo que enseña la banda es el medido, no una animación.
+        var tie = $("veredictoTiempo");
+        if (estado.ms) { $("veredictoMs").textContent = (estado.ms / 1000).toFixed(1) + " s"; tie.hidden = false; }
+        else { tie.hidden = true; }
+
+        // ---- el mapeo: lo dicho contra el documento, campo por campo ----
+        var mapa = $("mapeo");
+        vaciar(mapa);
+        var ENTIDAD = { nombre: "PERSON_NAME", cedula: "ID_NUMBER" };
+        (estado.cotejo || []).forEach(function (f) {
+            var clase = f.estado === "conflicto" ? " mal" : f.estado === "confirmado" ? " ok" : "";
+            var par = el("div", "par" + clase);
+
+            var izq = el("div", "lado");
+            var rotI = el("span", "rotulo");
+            rotI.appendChild(el("span", null, f.etiqueta));
+            rotI.appendChild(el("span", "marca-ent", ENTIDAD[f.clave] || "CAMPO"));
+            izq.appendChild(rotI);
+            izq.appendChild(el("div", "caja" + (f.dicho ? "" : " vacia"), f.dicho || "no lo dijo"));
+
+            var nexo = el("div", "nexo");
+            nexo.appendChild(el("i"));
+
+            var der = el("div", "lado");
+            var rotD = el("span", "rotulo");
+            rotD.appendChild(el("span", null, "en la cédula"));
+            if (f.estado === "confirmado") rotD.appendChild(el("span", "sello ok", "coincide"));
+            if (f.estado === "conflicto") rotD.appendChild(el("span", "sello mal", "no coincide"));
+            der.appendChild(rotD);
+            der.appendChild(el("div", "caja doc" + (f.leido ? "" : " vacia"), f.leido || "sin documento"));
+
+            par.appendChild(izq); par.appendChild(nexo); par.appendChild(der);
+            mapa.appendChild(par);
+        });
 
         // ---- lo que falta, preguntado ----
         var faltantes = CAMPOS_KYC.filter(function (def) {
@@ -1503,6 +1493,37 @@
         }
     }
 
+    /* ---------- la tubería de IA ----------
+       Enseña qué modelo está trabajando y cuánto tardó DE VERDAD. Nada de barras de
+       progreso inventadas: la barra se llena al empezar y el número que queda escrito
+       es el medido. Un tiempo real de 18 s convence más que un 1,2 s falso, porque el
+       jurado puede reproducirlo. */
+
+    var PASOS = { voz: 1, texto: 2, documento: 3 };
+
+    function tuberiaAbrir(cual) {
+        var velo = $("tuberia");
+        [1, 2, 3].forEach(function (n) {
+            $("paso" + n).className = "paso";
+            $("paso" + n + "Estado").textContent = "en espera";
+            $("paso" + n + "Barra").style.transform = "scaleX(0)";
+        });
+        var n = PASOS[cual];
+        $("paso" + n).className = "paso activo";
+        $("paso" + n + "Estado").textContent = "trabajando…";
+        $("paso" + n + "Barra").style.transform = "scaleX(1)";
+        velo.hidden = false;
+        return n;
+    }
+
+    function tuberiaCerrar(n, ms) {
+        $("paso" + n).className = "paso listo";
+        $("paso" + n + "Estado").textContent = ms ? (ms / 1000).toFixed(1) + " s" : "listo";
+        setTimeout(function () { $("tuberia").hidden = true; }, 550);
+    }
+
+    function tuberiaFallo() { $("tuberia").hidden = true; }
+
     /* ---------- hablar con el servidor ---------- */
 
     function decir(nodo, texto, malo) {
@@ -1552,12 +1573,14 @@
         estado.texto = texto;
         decir($("estadoVoz"), "leyendo lo que dijiste…");
         $("interpretar").disabled = true;
+        var n = tuberiaAbrir("texto");
         pedir("/entrevista", { texto: texto, campos: estado.campos })
             .then(function (r) {
+                tuberiaCerrar(n, r.ms);
                 adoptar(r);
                 decir($("estadoVoz"), "expediente armado en " + (r.ms / 1000).toFixed(1) + " s, aquí mismo");
             })
-            .catch(function (e) { decir($("estadoVoz"), e.message, true); })
+            .catch(function (e) { tuberiaFallo(); decir($("estadoVoz"), e.message, true); })
             .then(function () { $("interpretar").disabled = false; });
     });
 
@@ -1580,18 +1603,22 @@
             grabadora.ondataavailable = function (ev) { if (ev.data.size) trozos.push(ev.data); };
             grabadora.onstop = function () {
                 stream.getTracks().forEach(function (t) { t.stop(); });
+                $("ondas").className = "ondas";
                 $("grabar").textContent = "Grabar al cliente";
                 decir($("estadoVoz"), "transcribiendo en este equipo…");
                 var blob = new Blob(trozos, { type: grabadora.mimeType || "audio/webm" });
+                var nVoz = tuberiaAbrir("voz");
                 blob.arrayBuffer().then(function (buf) {
                     return pedir("/transcribir", buf, blob.type);
                 }).then(function (r) {
+                    tuberiaCerrar(nVoz, r.ms);
                     $("dictado").value = r.texto;
                     decir($("estadoVoz"), "transcrito en " + (r.ms / 1000).toFixed(1) + " s, sin salir del equipo");
-                }).catch(function (e) { decir($("estadoVoz"), e.message, true); });
+                }).catch(function (e) { tuberiaFallo(); decir($("estadoVoz"), e.message, true); });
             };
             grabadora.start();
             $("grabar").textContent = "Detener";
+            $("ondas").className = "ondas viva";
             decir($("estadoVoz"), "grabando…");
         }).catch(function () {
             decir($("estadoVoz"), "no se pudo abrir el micrófono", true);
@@ -1611,9 +1638,25 @@
         if (!f) return;
         if (!hayServidor) { decir($("estado"), "sin servidor: solo se pueden ver los casos de ejemplo", true); return; }
         decir($("estado"), "leyendo la cédula dos veces en este equipo… (la primera tarda más: carga el modelo)");
+
+        // La foto entra al visor, y el láser corre SOLO mientras el modelo lee de verdad.
+        var visor = $("visor");
+        var previa = visor.querySelector("img");
+        if (!previa) {
+            previa = document.createElement("img");
+            previa.alt = "Documento cargado";
+            visor.insertBefore(previa, visor.firstChild);
+        }
+        previa.src = URL.createObjectURL(f);
+        $("visorVacio").hidden = true;
+        $("laser").hidden = false;
+        var nDoc = tuberiaAbrir("documento");
+
         f.arrayBuffer().then(function (buf) {
             return pedir("/documento", buf, f.type || "image/png");
         }).then(function (r) {
+            $("laser").hidden = true;
+            tuberiaCerrar(nDoc, r.ms);
             estado.campos = r.campos;
             estado.textoLeido = r.textoLeido;
             estado.kyc = r.kyc;
@@ -1626,7 +1669,7 @@
             decir($("estado"), "leída " + veces + " veces en " + (r.ms / 1000).toFixed(1) + " s, sin salir del equipo" + quiebre,
                   estado.discrepancias.length > 0);
             redecidir();
-        }).catch(function (e) { decir($("estado"), e.message, true); });
+        }).catch(function (e) { $("laser").hidden = true; tuberiaFallo(); decir($("estado"), e.message, true); });
         $("imagen").value = "";
     });
 
@@ -1664,12 +1707,15 @@
         }
         decir($("estadoVoz"), "pasando el dictado por el modelo…");
         decir($("estado"), "usando la lectura ya medida de esta cédula");
+        var nCaso = tuberiaAbrir("texto");
         pedir("/caso", { texto: caso.dictado, textoLeido: caso.textoLeido })
             .then(function (r) {
+                tuberiaCerrar(nCaso, r.ms);
                 adoptar(r);
                 decir($("estadoVoz"), "expediente armado en " + (r.ms / 1000).toFixed(1) + " s, aquí mismo");
             })
             .catch(function (e) {
+                tuberiaFallo();
                 adoptar(caso);
                 decir($("estadoVoz"), e.message, true);
             });
