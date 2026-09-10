@@ -43,10 +43,18 @@ const ETIQUETAS = [
   { campo: "sangre", texto: "tipo de sangre" },
   { campo: "expedida", texto: "expedida" },
   { campo: "expira", texto: "expira" },
+  // Las del pasaporte. Vienen en dos idiomas separados por una barra, y `etiquetaDe`
+  // se queda con la mitad de la izquierda antes de comparar.
+  { campo: "cedula", texto: "pasaporte no" },
+  { campo: "nombre", texto: "apellidos" },
+  { campo: "expira", texto: "fecha de expiracion" },
+  { campo: "lugar", texto: "nacionalidad" },
 ];
 
 export function etiquetaDe(linea) {
-  const l = plano(linea);
+  // Un documento bilingüe rotula «FECHA DE NACIMIENTO / DATE OF BIRTH». Se compara con
+  // la mitad de la izquierda: la de la derecha solo alarga la línea y estorba.
+  const l = plano(String(linea ?? "").split("/")[0]);
   if (!l || l.length > 30) return null;
   for (const e of ETIQUETAS) if (l === e.texto) return e.campo;
   for (const e of ETIQUETAS) {
@@ -59,7 +67,8 @@ export function etiquetaDe(linea) {
 // Frases con las que el modelo se presenta o se despide. No son texto de la cédula.
 const RUIDO = /^(this (card )?is a( national)? id card|the answer is|here (is|are)|documento sintetico)/i;
 
-const FECHA = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/;
+// La cédula imprime 17-04-1988; el pasaporte, 05 09 1993. Las dos son la misma fecha.
+const FECHA = /^(\d{1,2})[-/\s](\d{1,2})[-/\s](\d{4})$/;
 export const aIso = (t) => {
   const m = FECHA.exec(String(t).trim());
   if (!m) return "";
@@ -250,14 +259,61 @@ export function huellaDe({ modelo, cuantizacion, prompt, imagen, pasadas, hoy = 
   };
 }
 
-async function unaLectura(modelId, rutaImagen) {
+// Medido el 10 sep: con el prompt general, VisionPsy transcribe los campos impresos del
+// pasaporte y **se salta el MRZ**. Pidiéndoselo expresamente sí lo devuelve. Por eso el
+// pasaporte lleva una pasada más, y solo el pasaporte: la cédula no la necesita y no se
+// le cambia nada.
+export const PREGUNTA_MRZ =
+  "Transcribe the very last line at the bottom of this image. It is a single line of " +
+  "monospaced characters containing capital letters, digits and < symbols. Copy it " +
+  "exactly, character by character. Output nothing else.";
+
+async function unaLectura(modelId, rutaImagen, prompt = PREGUNTA) {
   const run = completion({
     modelId,
-    history: [{ role: "user", content: PREGUNTA, attachments: [{ path: rutaImagen }] }],
+    history: [{ role: "user", content: prompt, attachments: [{ path: rutaImagen }] }],
     temperature: 0, max_tokens: 300, captureThinking: false,
   });
   const texto = (await run.text).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   return { texto, campos: camposDeDocumento(texto), stats: await run.stats };
+}
+
+const PARECE_PASAPORTE = /\b(pasaporte|passport)\b/i;
+
+/**
+ * Cuando lo leído es un pasaporte, el MRZ es la autoridad: es lo único de todo el
+ * documento que puede demostrar con aritmética que se leyó bien. Lo impreso pasa a ser
+ * la segunda opinión, y si las dos no coinciden **se dice**, porque eso significa que el
+ * modelo se equivocó en una de las dos y no sabemos en cuál sin mirar.
+ */
+export function mandaElMrz(impresas, mrz) {
+  const buenas = (impresas ?? []).filter(Boolean);
+  if (!mrz) return { campos: buenas[0] ?? null, avisos: [] };
+
+  const avisos = [];
+  const comparar = [
+    ["cedula", "el número de documento"],
+    ["nacimiento", "la fecha de nacimiento"],
+    ["expira", "la fecha de expiración"],
+  ];
+  // Se compara contra CADA lectura impresa, no contra el consenso: si una de ellas
+  // discrepa del MRZ, eso es justo lo que hay que contar.
+  for (const [clave, como] of comparar) {
+    const b = mrz[clave];
+    if (!b) continue;
+    const distintas = [...new Set(buenas.map((i) => i?.[clave]).filter((a) => a && plano(a) !== plano(b)))];
+    for (const a of distintas) {
+      avisos.push(`${como} salió distinta en lo impreso (${deIso(a)}) y en el MRZ (${deIso(b)}): manda el MRZ, que trae su dígito de control`);
+    }
+  }
+
+  // El MRZ que devuelve el modelo suele ser solo la segunda línea, que no lleva el
+  // nombre. Se toma el impreso, descartando el que venga con palabras pegadas: eso es
+  // basura de transcripción, no un nombre.
+  const nombres = buenas.map((i) => i?.nombre).filter(Boolean);
+  const nombreImpreso = nombres.find((n) => !nombreDudoso(n)) ?? "";
+
+  return { campos: { ...mrz, nombre: mrz.nombre || nombreImpreso }, avisos };
 }
 
 export async function leerCedula(modelId, rutaImagen, opciones = {}) {
@@ -267,8 +323,30 @@ export async function leerCedula(modelId, rutaImagen, opciones = {}) {
   const lecturas = [];
   for (let i = 0; i < pasadas; i++) lecturas.push(await unaLectura(modelId, rutaImagen));
 
-  const { campos, discrepancias } = consensuar(lecturas.map((l) => l.campos));
+  let { campos, discrepancias } = consensuar(lecturas.map((l) => l.campos));
+  const avisosDelMrz = [];
+
+  // Si lo leído habla de un pasaporte, una pasada más para pedirle el MRZ.
+  if (lecturas.some((l) => PARECE_PASAPORTE.test(l.texto))) {
+    const zona = await unaLectura(modelId, rutaImagen, PREGUNTA_MRZ);
+    lecturas.push(zona);
+    const mrz = zona.campos?.tipo === "pasaporte" ? zona.campos : null;
+    const r = mandaElMrz(lecturas.slice(0, pasadas).map((l) => l.campos), mrz);
+    avisosDelMrz.push(...r.avisos);
+
+    if (mrz) {
+      // El MRZ **sustituye** al consenso de las dos lecturas. Un dígito de control
+      // prueba más que dos lecturas que coinciden: coincidir dos veces en el mismo
+      // error sigue siendo un error, y la aritmética no.
+      campos = r.campos;
+      discrepancias = [];
+    } else {
+      avisosDelMrz.push("no se pudo leer la zona MRZ del pasaporte: sin ella no hay dígitos de control que comprueben la lectura");
+    }
+  }
+
   const kyc = evaluarKyc(campos);
+  kyc.avisos.push(...avisosDelMrz);
 
   // Una discrepancia consigo mismo no es un detalle técnico: es el motivo por el que ese
   // campo no está, y el operador tiene que leerlo con las mismas palabras que lo demás.

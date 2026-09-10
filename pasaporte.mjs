@@ -86,21 +86,76 @@ export function nombreDeMrz(campo) {
 }
 
 /**
+ * Lee la segunda línea del MRZ **por estructura, no por posición**.
+ *
+ * Medido el 10 sep: VisionPsy devuelve la línea comprimida. Con el pasaporte limpio dio
+ *
+ *     X1234567<7UTOPIA9309050F3208195<02
+ *
+ * cuando la línea real es
+ *
+ *     X1234567<7UTO9309050F3208195<<<<<<<<<<<<<<02
+ *
+ * Se comió el relleno y escribió el país entero. Pero **todos los datos y todos los
+ * dígitos de control están bien**. Cortar por posición fija los perdía; leerlos por su
+ * forma los recupera, y la comprobación aritmética sigue siendo exactamente la misma.
+ *
+ * El ancla es el bloque central, que tiene forma inconfundible:
+ * seis dígitos de nacimiento, su control, el sexo, seis de expiración y su control.
+ */
+const CENTRO = /(\d{6})(\d)([MFX<])(\d{6})(\d)/;
+
+export function partesDeLinea(linea) {
+  const l = normalizarLinea(linea);
+  const m = CENTRO.exec(l);
+  if (!m) return null;
+
+  const antes = l.slice(0, m.index);
+  const despues = l.slice(m.index + m[0].length);
+
+  // Antes del ancla: número de documento, su dígito, y la nacionalidad. El dígito es
+  // siempre una cifra, así que la nacionalidad es la tira de letras que va al final.
+  const a = /^(.*\d)([A-Z]+)$/.exec(antes);
+  if (!a) return null;
+  const numeroYDigito = a[1];
+  const nacionalidad = a[2].slice(0, 3);
+
+  const digitoNumero = numeroYDigito.slice(-1);
+  // El dígito se calcula sobre el campo de 9 posiciones, relleno incluido.
+  const numero = numeroYDigito.slice(0, -1).replace(/<+$/, "").padEnd(9, "<");
+
+  // Después del ancla: el campo opcional, su dígito y el del conjunto. Los dos últimos
+  // caracteres son siempre esos dos dígitos.
+  const digitoTodo = despues.slice(-1);
+  const digitoOpcional = despues.slice(-2, -1);
+  const opcional = despues.slice(0, -2).replace(/<+$/, "").padEnd(14, "<");
+
+  return {
+    numero, digitoNumero, nacionalidad,
+    nacimiento: m[1], digitoNacimiento: m[2],
+    sexo: m[3] === "<" ? "" : m[3],
+    expiracion: m[4], digitoExpiracion: m[5],
+    opcional, digitoOpcional, digitoTodo,
+  };
+}
+
+/**
  * Encuentra las dos líneas del MRZ dentro de lo que devolvió el modelo.
- * La segunda línea es la que manda: es la que trae las fechas y los dígitos de control.
+ * La segunda es la que manda: es la que trae las fechas y los dígitos de control. La
+ * primera, la del nombre, es opcional: si el modelo solo devolvió una, se sigue igual.
  */
 export function lineasDeMrz(texto) {
   const candidatas = String(texto ?? "")
     .split("\n")
     .map(normalizarLinea)
-    .filter((l) => l.length >= 30 && /^[A-Z0-9<]+$/.test(l));
+    .filter((l) => l.length >= 20 && /^[A-Z0-9<]+$/.test(l));
 
-  // La primera empieza por P; la segunda es la que le sigue con largo parecido.
-  const i = candidatas.findIndex((l) => /^P[A-Z<]/.test(l));
-  if (i < 0 || i + 1 >= candidatas.length) return null;
+  const dos = candidatas.find((l) => partesDeLinea(l) !== null);
+  if (!dos) return null;
 
-  const rellenar = (l) => (l.length >= LARGO ? l.slice(0, LARGO) : l.padEnd(LARGO, "<"));
-  return { uno: rellenar(candidatas[i]), dos: rellenar(candidatas[i + 1]) };
+  // La del nombre es la que empieza por P y no es la segunda.
+  const uno = candidatas.find((l) => l !== dos && /^P[A-Z<]/.test(l)) ?? "";
+  return { uno, dos };
 }
 
 export const pareceMrz = (texto) => lineasDeMrz(texto) !== null;
@@ -113,59 +168,46 @@ export const pareceMrz = (texto) => lineasDeMrz(texto) !== null;
 export function camposDePasaporte(texto, hoy = new Date()) {
   const l = lineasDeMrz(texto);
   if (!l) return null;
+  const p = partesDeLinea(l.dos);
+  if (!p) return null;
 
   const fallos = [];
-  const trozo = (linea, desde, hasta) => linea.slice(desde, hasta);
-
-  const pais = trozo(l.uno, 2, 5).replace(/</g, "");
-  const nombre = nombreDeMrz(trozo(l.uno, 5, LARGO));
-
-  const numero = trozo(l.dos, 0, 9);
-  const dNumero = trozo(l.dos, 9, 10);
-  const nacionalidad = trozo(l.dos, 10, 13).replace(/</g, "");
-  const nac = trozo(l.dos, 13, 19);
-  const dNac = trozo(l.dos, 19, 20);
-  const sexo = trozo(l.dos, 20, 21).replace(/</g, "");
-  const exp = trozo(l.dos, 21, 27);
-  const dExp = trozo(l.dos, 27, 28);
-  const opcional = trozo(l.dos, 28, 42);
-  const dOpcional = trozo(l.dos, 42, 43);
-  const dTodo = trozo(l.dos, 43, 44);
-
-  const numeroOk = cuadra(numero, dNumero);
-  const nacOk = cuadra(nac, dNac);
-  const expOk = cuadra(exp, dExp);
-  // El compuesto abarca número+dígito, nacimiento+dígito, expiración+dígito y el opcional.
-  const compuesto = numero + dNumero + nac + dNac + exp + dExp + opcional + dOpcional;
-  const todoOk = cuadra(compuesto, dTodo);
+  const numeroOk = cuadra(p.numero, p.digitoNumero);
+  const nacOk = cuadra(p.nacimiento, p.digitoNacimiento);
+  const expOk = cuadra(p.expiracion, p.digitoExpiracion);
+  const compuesto = p.numero + p.digitoNumero + p.nacimiento + p.digitoNacimiento
+                  + p.expiracion + p.digitoExpiracion + p.opcional + p.digitoOpcional;
+  const todoOk = cuadra(compuesto, p.digitoTodo);
 
   if (!numeroOk) fallos.push("el número de pasaporte no cuadra con su dígito de control");
   if (!nacOk) fallos.push("la fecha de nacimiento no cuadra con su dígito de control");
   if (!expOk) fallos.push("la fecha de expiración no cuadra con su dígito de control");
   if (!todoOk) fallos.push("el dígito de control del conjunto no cuadra: hay algo mal leído");
 
+  // El país emisor sale de la primera línea si la hay; si no, de la nacionalidad.
+  const pais = /^P[A-Z<]([A-Z]{3})/.exec(l.uno)?.[1] ?? p.nacionalidad;
+  const nombre = l.uno ? nombreDeMrz(l.uno.slice(5)) : "";
+
   return {
     tipo: "pasaporte",
     nombre,
     // Se llama `cedula` a propósito: el resto del sistema (evaluarKyc, cotejar, la
     // pantalla) trabaja con esa clave y no tiene que saber qué documento es.
-    cedula: numeroOk ? numero.replace(/</g, "") : "",
-    nacimiento: nacOk ? aFecha(nac, "nacimiento", hoy) : "",
-    lugar: nacionalidad,
-    sexo,
+    cedula: numeroOk ? p.numero.replace(/</g, "") : "",
+    nacimiento: nacOk ? aFecha(p.nacimiento, "nacimiento", hoy) : "",
+    lugar: p.nacionalidad,
+    sexo: p.sexo,
     sangre: "",
     expedida: "",
-    expira: expOk ? aFecha(exp, "expiracion", hoy) : "",
+    expira: expOk ? aFecha(p.expiracion, "expiracion", hoy) : "",
     huerfanos: [],
-    // Lo propio del pasaporte
     paisEmisor: pais,
-    nacionalidad,
-    mrz: [l.uno, l.dos],
+    nacionalidad: p.nacionalidad,
+    mrz: [l.uno, l.dos].filter(Boolean),
     control: { numero: numeroOk, nacimiento: nacOk, expiracion: expOk, conjunto: todoOk },
     fallos,
   };
 }
-
 
 /**
  * Construye las dos líneas del MRZ a partir de los datos, con sus dígitos de control

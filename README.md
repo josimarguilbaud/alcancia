@@ -166,6 +166,52 @@ réplica del pasaporte de ningún país real: aunque lleve marca de agua de docu
 sintético, fabricar una copia creíble del documento de viaje de un estado es exactamente
 la clase de cosa que no se hace.
 
+### Lo que pasó al medirlo, el 10 de septiembre
+
+Vale la pena contarlo entero, porque no salió como esperábamos y el resultado es mejor.
+
+**Con el prompt general, VisionPsy se salta el MRZ.** Transcribe los campos impresos y
+no baja hasta las dos líneas del pie. Pidiéndoselo expresamente sí las devuelve, así que
+el pasaporte lleva una pasada más; la cédula no la necesita y no se le tocó nada.
+
+**Y las devuelve comprimidas.** Sobre el pasaporte limpio dio
+
+```
+X1234567<7UTOPIA9309050F3208195<02          lo que devolvió el modelo
+X1234567<7UTO9309050F3208195<<<<<<<<<<<<<<02  la línea real
+```
+
+Se comió el relleno y escribió el país entero en vez del código de tres letras. Pero
+**todos los datos y todos los dígitos de control están bien**. Por eso el parser lee la
+línea *por estructura y no por posición*: ancla en el bloque central (seis dígitos de
+nacimiento, su control, el sexo, seis de expiración y su control), que tiene forma
+inconfundible, y deduce el resto hacia los lados.
+
+**Y entonces pasó lo bueno.** En la parte impresa el modelo leyó la expiración como
+`10 08 2032`. La verdad es `19 08 2032`: confundió un 9 con un 0. El MRZ, con su dígito
+de control, dice 19. Y la app lo dijo sola:
+
+> la fecha de expiración salió distinta en lo impreso (10-08-2032) y en el MRZ
+> (19-08-2032): manda el MRZ, que trae su dígito de control
+
+**El sistema atrapó un error del propio modelo, y explicó cómo lo supo.** No es que
+desconfíe del modelo por norma: es que tenía una manera de comprobarlo y la usó.
+
+| | pasaporte limpio | pasaporte gastado |
+|---|---|---|
+| Tiempo | 29,5 s | 31,2 s |
+| Número, nacimiento, expiración | correctos | correctos |
+| Dígitos de control | 4 / 4 | 4 / 4 |
+| Nombre | leído de lo impreso | **no legible** |
+| Veredicto | vigente, el trámite sigue | **no evaluable**, se detiene |
+
+En el gastado el nombre impreso salió como una tira de letras pegadas y el MRZ recortado
+no lo trae, así que no hay nombre que aceptar. El trámite se detiene, que es exactamente
+lo que tiene que pasar: **un banco no abre una cuenta a un nombre que nadie pudo leer.**
+
+Son tres pasadas del modelo, unos 30 segundos. Para no abrir una cuenta con una fecha
+mal leída, es barato.
+
 ---
 
 ## Lo que está medido

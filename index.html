@@ -329,6 +329,7 @@
   .espera svg { width: 44px; height: 44px; stroke: var(--suave); fill: none; stroke-width: 1.4; }
   .espera h3 { font-size: 16px; color: var(--media); }
   .espera p { font-size: 13.5px; color: var(--suave); max-width: 42ch; }
+  .espera-nota { font-size: 12.5px !important; color: var(--media) !important; margin-top: 6px; }
 
   /* banda del veredicto */
   .verdict {
@@ -701,8 +702,10 @@
 
       <div class="espera" id="espera">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
-        <h3>Esperando la captura</h3>
-        <p>Dicta la atención y toma la foto de la cédula. Aquí aparece el cotejo entre lo que dijo el cliente y lo que dice su documento.</p>
+        <h3>Listo para atender</h3>
+        <p>Graba o escribe lo que dice el cliente, y toma la foto de su documento. Aquí
+        aparece el cotejo entre las dos cosas.</p>
+        <p class="espera-nota">¿Solo quieres ver cómo funciona? Arriba hay cuatro casos ya medidos.</p>
       </div>
 
       <div class="verdict" id="veredicto">
@@ -1862,7 +1865,11 @@
             $("aviso").hidden = false;
         })
         .then(function () {
-            if (CASOS.length) cargarCaso(CASOS[0], contenedor.firstChild);
+            // Con servidor se abre en blanco: el oficial va a atender a una persona, no
+            // a revisar un ejemplo. Un expediente ya lleno al entrar hace dudar de si es
+            // real. Sin servidor no se puede capturar nada, así que ahí sí se carga un
+            // caso: es lo único que la página puede enseñar.
+            if (!hayServidor && CASOS.length) cargarCaso(CASOS[0], contenedor.firstChild);
         });
 })();
 </script>

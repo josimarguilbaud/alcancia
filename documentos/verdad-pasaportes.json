@@ -1,0 +1,34 @@
+[
+  {
+    "id": "pasaporte-limpio",
+    "pais": "UTO",
+    "apellidos": "FERREIRA<DOS<SANTOS",
+    "nombres": "ANA LUCIA",
+    "numero": "X1234567",
+    "nacimiento": "1993-09-05",
+    "expira": "2032-08-19",
+    "sexo": "F",
+    "opcional": "",
+    "estilo": "limpia",
+    "mrz": [
+      "P<UTOFERREIRA<DOS<SANTOS<<ANA<LUCIA<<<<<<<<<",
+      "X1234567<7UTO9309050F3208195<<<<<<<<<<<<<<02"
+    ]
+  },
+  {
+    "id": "pasaporte-gastado",
+    "pais": "UTO",
+    "apellidos": "OKONKWO",
+    "nombres": "CHIDI EMEKA",
+    "numero": "B7742019",
+    "nacimiento": "1979-02-28",
+    "expira": "2024-11-30",
+    "sexo": "M",
+    "opcional": "",
+    "estilo": "gastada",
+    "mrz": [
+      "P<UTOOKONKWO<<CHIDI<EMEKA<<<<<<<<<<<<<<<<<<<",
+      "B7742019<3UTO7902284M2411303<<<<<<<<<<<<<<08"
+    ]
+  }
+]
