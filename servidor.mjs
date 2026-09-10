@@ -16,7 +16,7 @@ import {
   QWEN3_1_7B_INST_Q4, QWEN3_4B_INST_Q4_K_M,
   VISIONPSY_NANO_460M_MULTIMODAL_Q4_K_M_1, MMPROJ_VISIONPSY_NANO_460M_MULTIMODAL_Q8_0_1,
 } from "@qvac/sdk";
-import { leerCedula, evaluarKyc, camposDeCedula } from "./documento.mjs";
+import { leerCedula, evaluarKyc, camposDeDocumento } from "./documento.mjs";
 import { extraerEntrevista, expedienteDe } from "./entrevista.mjs";
 import { decidir } from "./cotejar.mjs";
 
@@ -158,7 +158,7 @@ const servidor = http.createServer(async (req, res) => {
       const { texto, textoLeido } = JSON.parse((await cuerpo(req)).toString("utf-8"));
       if (!texto?.trim()) return json(res, 400, { error: "falta el texto" });
       const r = await extraerEntrevista(llm, texto.trim());
-      const campos = textoLeido ? camposDeCedula(textoLeido) : null;
+      const campos = textoLeido ? camposDeDocumento(textoLeido) : null;
       const kyc = campos ? evaluarKyc(campos) : null;
       return json(res, 200, { crudo: r.crudo, descartes: r.descartes, ms: r.ms, stats: r.stats, campos, textoLeido: textoLeido ?? "", ...decidir(r.expediente, campos, kyc), kyc });
     }

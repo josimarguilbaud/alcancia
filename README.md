@@ -122,6 +122,52 @@ mismo, se lee dos veces y solo se acepta lo que coincide.
 
 ---
 
+## Cédula o pasaporte
+
+En Panamá quien llega a abrir su primera cuenta muchas veces no trae cédula: trae
+pasaporte. Es justamente la persona no bancarizada, así que dejarla fuera sería dejar
+fuera al cliente que más importa.
+
+**Alcancía no pregunta qué documento es. Lo mira.** Si lo leído trae un MRZ (las dos
+líneas del pie de la página de datos, formato ICAO 9303), es un pasaporte; si no, se
+trata como cédula. El resto del sistema —el cotejo, el veredicto, el expediente— no sabe
+la diferencia ni la necesita.
+
+### Y el pasaporte puede demostrar que se leyó bien
+
+Esto es lo mejor que le pasó a este producto. El MRZ **lleva dígitos de control**: el
+número de documento, la fecha de nacimiento, la de expiración y el conjunto entero van
+cada uno con su cifra verificadora, calculada con pesos 7-3-1.
+
+O sea que si el modelo lee mal un solo carácter, **la cuenta no cuadra y el código lo
+sabe**. No lo sospecha: lo sabe.
+
+```
+Lo que dijo el modelo        L898902C8 6 UTO 7408122 F 1204159 …
+Lo que dice la aritmética    el dígito de L898902C8 debería ser 4, no 6
+Lo que hace Alcancía         el número no entra al expediente, y se dice por qué
+```
+
+Con la cédula podemos decir «no pude leerlo». Con el pasaporte podemos decir **«lo leí,
+hice la cuenta, y no cuadra»**, que para un banco es una afirmación mucho más fuerte.
+
+Las pruebas se corren contra el ejemplo canónico de ICAO 9303 (Anna Maria Eriksson, del
+propio estándar): si nuestros dígitos no dan exactamente los suyos, el módulo está mal.
+Y hay una prueba de ida y vuelta, que construye un MRZ y lo vuelve a leer.
+
+### Los pasaportes de prueba
+
+```bash
+npm run pasaportes   # dibuja dos pasaportes sintéticos y su verdad
+```
+
+El país emisor es **UTO**, el código que ICAO reserva para especímenes. No se dibuja la
+réplica del pasaporte de ningún país real: aunque lleve marca de agua de documento
+sintético, fabricar una copia creíble del documento de viaje de un estado es exactamente
+la clase de cosa que no se hace.
+
+---
+
 ## Lo que está medido
 
 | | |
@@ -129,7 +175,7 @@ mismo, se lee dos veces y solo se acepta lo que coincide.
 | Campos leídos | **30** en cuatro cédulas sintéticas |
 | Campos mal | **0** |
 | Trámites decididos como lo haría un operador | **4 / 4** |
-| Pruebas deterministas | **102** |
+| Pruebas deterministas | **159** |
 
 Registro completo en [`rendimiento/cedulas.json`](rendimiento/cedulas.json), con el texto
 crudo que devolvió el modelo en cada documento.
@@ -165,7 +211,7 @@ npm start       # http://localhost:3215
 La primera foto tarda más: es cuando se carga VisionPsy.
 
 ```bash
-npm run prueba  # 102 pruebas deterministas, sin modelo, en milisegundos
+npm run prueba  # 159 pruebas deterministas, sin modelo, en milisegundos
 npm run casos   # recalcula los cuatro casos de la demostración
 ```
 
@@ -200,7 +246,8 @@ el primer arranque los carga en memoria. A partir de ahí es rápido.
 
 | Archivo | Qué hace |
 |---|---|
-| `documento.mjs` | lee la cédula dos veces, empareja etiqueta con valor, `consensuar` cruza las dos lecturas, `evaluarKyc` da el veredicto y `huellaDe` firma quién lo leyó |
+| `pasaporte.mjs` | lee el MRZ y **comprueba sus dígitos de control**; `mrzDe` hace el camino inverso |
+| `documento.mjs` | decide qué documento es, lo lee dos veces, empareja etiqueta con valor, `consensuar` cruza las dos lecturas, `evaluarKyc` da el veredicto y `huellaDe` firma quién lo leyó |
 | `entrevista.mjs` | el dictado → expediente KYC. `cedulaEn`, `telefonoEn`, `montoEn` |
 | `cotejar.mjs` | el cotejo y `decidir`, la regla completa del trámite |
 | `servidor.mjs` | `/transcribir` `/entrevista` `/documento` `/decidir` `/caso` |

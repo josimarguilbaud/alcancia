@@ -10,8 +10,10 @@
   },
   "scripts": {
     "start": "node servidor.mjs",
-    "prueba": "node prueba-campos.mjs && node prueba-entrevista.mjs",
-    "casos": "node generar-casos.mjs"
+    "prueba": "node prueba-campos.mjs && node prueba-entrevista.mjs && node prueba-pasaporte.mjs",
+    "casos": "node generar-casos.mjs",
+    "documentos": "node documentos/generar.mjs",
+    "pasaportes": "node documentos/generar-pasaporte.mjs"
   },
   "engines": {
     "node": ">=20"

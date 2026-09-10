@@ -6,7 +6,7 @@
 // si cambia una regla, se vuelve a correr `node generar-casos.mjs` y la copia se rehace.
 // Sin modelo: no toca QVAC. `node generar-casos.mjs`
 import { readFileSync, writeFileSync } from "node:fs";
-import { camposDeCedula, evaluarKyc } from "./documento.mjs";
+import { camposDeDocumento, evaluarKyc } from "./documento.mjs";
 import { expedienteDe } from "./entrevista.mjs";
 import { decidir } from "./cotejar.mjs";
 import { CASOS } from "./casos-demo.mjs";
@@ -16,7 +16,7 @@ const FIN = "/* CASOS:fin */";
 
 const calculados = CASOS.map((c) => {
   const { expediente, descartes } = expedienteDe(c.crudo, c.dictado);
-  const campos = camposDeCedula(c.textoLeido);
+  const campos = camposDeDocumento(c.textoLeido);
   const kyc = evaluarKyc(campos);
   return {
     id: c.id, boton: c.boton, resumen: c.resumen,

@@ -11,6 +11,7 @@
 // una persona. Preferimos decir "no lo leí" antes que decir un número que no vimos.
 import { createHash } from "node:crypto";
 import { completion } from "@qvac/sdk";
+import { camposDePasaporte } from "./pasaporte.mjs";
 
 export const PREGUNTA = "This is a national ID card. Transcribe every line of text exactly as printed, one line per row. Do not explain, do not add anything.";
 
@@ -121,6 +122,17 @@ export function camposDeCedula(texto) {
   };
 }
 
+/**
+ * Qué documento es. No se le pregunta al modelo ni al operador: se mira lo leído.
+ * Si trae un MRZ válido en su forma, es un pasaporte; si no, se sigue tratando como
+ * cédula, exactamente igual que hasta ahora. El camino de la cédula no cambia.
+ */
+export function camposDeDocumento(texto, hoy = new Date()) {
+  const pasaporte = camposDePasaporte(texto, hoy);
+  if (pasaporte) return pasaporte;
+  return { tipo: "cedula", ...camposDeCedula(texto) };
+}
+
 // De vuelta a como se lee una fecha en Panamá. El motor trabaja en ISO porque ordenar
 // y restar es más seguro así, pero al operador nunca se le enseña 2025-02-11.
 export const deIso = (iso) => {
@@ -133,14 +145,19 @@ export const deIso = (iso) => {
  * "vencida" de "no pude leer la fecha", que para un trámite son cosas muy distintas.
  */
 export function evaluarKyc(campos, hoy = new Date()) {
+  const esPasaporte = campos.tipo === "pasaporte";
   const faltan = [];
   if (!campos.nombre) faltan.push("nombre");
-  if (!campos.cedula) faltan.push("número de cédula");
+  if (!campos.cedula) faltan.push(esPasaporte ? "número de pasaporte" : "número de cédula");
   if (!campos.nacimiento) faltan.push("fecha de nacimiento");
   if (!campos.expira) faltan.push("fecha de expiración");
 
   const avisos = [];
-  if (campos.cedula && !cedulaValida(campos.cedula)) avisos.push(`«${campos.cedula}» no tiene forma de cédula panameña`);
+  // El formato panameño solo aplica a la cédula. Un pasaporte extranjero no tiene por
+  // qué parecerse, y lo que lo valida a él son sus dígitos de control.
+  if (!esPasaporte && campos.cedula && !cedulaValida(campos.cedula)) avisos.push(`«${campos.cedula}» no tiene forma de cédula panameña`);
+  // Lo que el MRZ delató: el modelo leyó algo cuya cuenta no cuadra.
+  for (const f of campos.fallos ?? []) avisos.push(f);
   if (campos.nombre && nombreDudoso(campos.nombre)) avisos.push(`el nombre trae palabras pegadas: hay que confirmarlo a mano`);
   if (campos.huerfanos?.length) avisos.push(`se leyeron ${campos.huerfanos.length} fecha(s) sin etiqueta (${campos.huerfanos.join(", ")}): no se asignan solas`);
 
@@ -200,6 +217,19 @@ export function consensuar(lecturas) {
   campos.huerfanos = (lecturas[0]?.huerfanos ?? []).filter((h) =>
     lecturas.slice(1).every((l) => (l?.huerfanos ?? []).some((x) => plano(x) === plano(h))));
 
+  // Lo que no es un campo comparable viaja con la primera lectura: qué documento es, qué
+  // dijeron los dígitos de control y qué país lo emitió.
+  campos.tipo = lecturas[0]?.tipo ?? "cedula";
+  if (lecturas[0]?.tipo === "pasaporte") {
+    campos.paisEmisor = lecturas[0].paisEmisor;
+    campos.nacionalidad = lecturas[0].nacionalidad;
+    campos.control = lecturas[0].control;
+    campos.mrz = lecturas[0].mrz;
+  }
+  // Un fallo de control en cualquiera de las lecturas cuenta: si una de las dos no cuadró,
+  // no se acepta como si nada hubiera pasado.
+  campos.fallos = [...new Set(lecturas.flatMap((l) => l?.fallos ?? []))];
+
   return { campos, discrepancias };
 }
 
@@ -227,7 +257,7 @@ async function unaLectura(modelId, rutaImagen) {
     temperature: 0, max_tokens: 300, captureThinking: false,
   });
   const texto = (await run.text).replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
-  return { texto, campos: camposDeCedula(texto), stats: await run.stats };
+  return { texto, campos: camposDeDocumento(texto), stats: await run.stats };
 }
 
 export async function leerCedula(modelId, rutaImagen, opciones = {}) {

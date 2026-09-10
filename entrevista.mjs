@@ -33,7 +33,7 @@ Rules:
 - producto: the product the customer is asking for, in Spanish and in the words of the message ("cuenta de ahorros", "prestamo personal", "cuenta corriente"). Empty string if not stated.
 - domicilio: only the place where the customer LIVES ("vive en X", "reside en X", "es de X"). Not the branch, not a workplace. Empty string if not stated.
 - ocupacion: the customer's job or profession, one or two words. Empty string if not stated.
-- NEVER output a national ID number, a phone number or an amount of money: those are read by code, not by you.
+- NEVER output a national ID number, a passport number, a phone number or an amount of money: those are read by code, not by you.
 Output only JSON matching the schema.`;
 
 // ------------------------------------------------------------- el código comprueba
@@ -73,6 +73,35 @@ export function cedulaEn(texto) {
     }
   }
   return candidatas[0];
+}
+
+
+// Un número de pasaporte no tiene la forma de una cédula panameña: son de seis a nueve
+// alfanuméricos, sin guiones. Eso es demasiado genérico para buscarlo suelto (cualquier
+// palabra en mayúsculas encajaría), así que **solo cuenta si va detrás de la palabra
+// pasaporte**. Preferimos no capturarlo a capturar cualquier cosa.
+const PALABRA_PASAPORTE = /^(pasaporte|pasaportes|passport)$/;
+const FORMATO_PASAPORTE = /^(?=.*\d)[A-Z0-9]{6,9}$/;
+
+export function pasaporteEn(texto) {
+  const crudo = String(texto ?? "").split(/\s+/);
+  const tok = plano(texto).split(" ");
+  for (let i = 0; i < tok.length; i++) {
+    if (!PALABRA_PASAPORTE.test(tok[i])) continue;
+    for (let j = i + 1; j <= i + 3 && j < crudo.length; j++) {
+      const cand = crudo[j].toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (FORMATO_PASAPORTE.test(cand)) return cand;
+    }
+  }
+  return "";
+}
+
+/**
+ * El documento del cliente, sea cual sea. Primero la cédula, porque su formato es
+ * inequívoco; si no hay, se busca un pasaporte.
+ */
+export function documentoEn(texto) {
+  return cedulaEn(texto) || pasaporteEn(texto);
 }
 
 // Panamá: móvil de 8 dígitos que empieza en 6, fijo de 7. Se exige el guion para no
@@ -166,7 +195,7 @@ export function expedienteDe(crudo, texto) {
     libre[clave] = v;
   }
 
-  const cedula = cedulaEn(texto);
+  const cedula = documentoEn(texto);
   const telefono = telefonoEn(texto, cedula);
   const ingreso = montoEn(texto);
 

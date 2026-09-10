@@ -4,7 +4,7 @@
 // Lo que se prueba aqui es exactamente lo que el modelo NO decide: la cedula, el
 // telefono, el monto y el matiz de «como». Si esto pasa, da igual que el modelo tenga
 // un mal dia con el texto libre: el expediente no se llena de numeros inventados.
-import { cedulaEn, telefonoEn, montoEn, apareceEn, pareceFecha, expedienteDe, formatoMonto } from "./entrevista.mjs";
+import { cedulaEn, telefonoEn, montoEn, apareceEn, pareceFecha, expedienteDe, formatoMonto, pasaporteEn, documentoEn } from "./entrevista.mjs";
 import { cotejar, cotejarExpediente, conflictosDe } from "./cotejar.mjs";
 
 let ok = 0, fallo = 0;
@@ -95,6 +95,25 @@ igual("un conflicto", conflictosDe(filasMalas).length, 1);
 
 const sinFoto = cotejarExpediente(vozMala, { nombre: "", cedula: "" });
 igual("sin foto todavia, el dato es reportado", sinFoto.map((f) => f.estado), ["reportado", "reportado"]);
+
+
+console.log("\npasaporteEn: el cliente que llega con pasaporte, no con cedula");
+igual("detras de la palabra pasaporte", pasaporteEn("Ana Lucia Ferreira, pasaporte X1234567, quiere abrir cuenta"), "X1234567");
+igual("con la palabra en ingles", pasaporteEn("passport B7742019"), "B7742019");
+igual("solo letras no vale: hace falta un digito", pasaporteEn("pasaporte ABCDEFG"), "");
+igual("suelto por ahi NO se captura", pasaporteEn("vive en BETANIA1 desde 2019"), "");
+igual("si no lo dice, vacio", pasaporteEn("quiere abrir una cuenta"), "");
+
+console.log("\ndocumentoEn: la cedula manda, el pasaporte es el respaldo");
+igual("cedula si la hay", documentoEn("cedula 8-912-3456, pasaporte X1234567"), "8-912-3456");
+igual("pasaporte si no hay cedula", documentoEn("pasaporte X1234567"), "X1234567");
+igual("ninguno", documentoEn("no trajo documento"), "");
+
+const conPasaporte = expedienteDe(
+  { nombre: "Ana Lucia Ferreira", producto: "cuenta de ahorros", domicilio: "", ocupacion: "" },
+  "Ana Lucia Ferreira, pasaporte X1234567, quiere abrir una cuenta de ahorros."
+);
+igual("el expediente lo recoge", conPasaporte.expediente.cedula.valor, "X1234567");
 
 console.log(`\n${ok} ok, ${fallo} fallan`);
 process.exit(fallo ? 1 : 0);

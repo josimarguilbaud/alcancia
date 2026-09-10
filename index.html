@@ -452,7 +452,7 @@
 
   .columna { display: flex; flex-direction: column; gap: 8px; }
   .columna-titulo { display: flex; flex-direction: column; gap: 1px; }
-  .columna-titulo h2 { font-size: 14px; }
+  .columna-titulo h2 { font-size: 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   .columna-titulo .de-donde { font-size: 12.5px; color: var(--suave); }
 
   .data-list {
@@ -759,7 +759,7 @@
         </div>
         <div class="columna">
           <div class="columna-titulo">
-            <h2>Lo que dice la cédula</h2>
+            <h2 id="tituloDocumento">Lo que dice la cédula</h2>
             <span class="de-donde">Leído del documento, sin rellenar huecos</span>
           </div>
           <div class="data-list" id="campos"></div>
@@ -843,6 +843,7 @@
         "textoLeido": "This card is a national ID card.\nNOMBRE  \nMARIA ISABEL QUINTERO ARJONA  \nCEDula  \n8-912-3456  \nFecha de Nacimiento  \n17-04-1988  \nLUGAR DE NACIMIENTO  \nPANAMA, PANAMA  \nSEXO  \nF   O+  \nEXPEDIDA  \n02-06-2021  \nEXPIRA  \n02-06-2031",
         "descartes": [],
         "campos": {
+          "tipo": "cedula",
           "nombre": "MARIA ISABEL QUINTERO ARJONA",
           "cedula": "8-912-3456",
           "nacimiento": "1988-04-17",
@@ -926,6 +927,7 @@
         "textoLeido": "NOMBRE  \nRODRIGO ANTONIO BERNAL SAAVEDRA  \n\nCEDULA  \n3-701-2288  \n\nFECHA DE NACIMIENTO  \n30-11-1974  \n\nLUGAR DE NACIMIENTO  \nCOLON, COLON  \n\nSEXO  \nM  \n\nTIPO DE SANGRE  \nA-  \n\nEXPEDIDA  \n11-02-2015  \n\nEXPIRA  \n11-02-2025",
         "descartes": [],
         "campos": {
+          "tipo": "cedula",
           "nombre": "RODRIGO ANTONIO BERNAL SAAVEDRA",
           "cedula": "3-701-2288",
           "nacimiento": "1974-11-30",
@@ -1028,6 +1030,7 @@
         "textoLeido": "This is a national ID card.\nNOMBRE  \nANA LUCIA FERREIRA DOS SANTOS\nCEDULA  \nE-8-145097  \nFECHA DE NACIMIENTO  \n05-09-1993  \nLUGAR DE NACIMIENTO  \nSAO PAULO, BRASIL  \nSEXO  \nF   B+  \nTIPO DE SANGRE  \nEXPEDIDA  \n19-08-2022  \nEXPIRA  \n19-08-2032",
         "descartes": [],
         "campos": {
+          "tipo": "cedula",
           "nombre": "ANA LUCIA FERREIRA DOS SANTOS",
           "cedula": "E-8-145097",
           "nacimiento": "1993-09-05",
@@ -1109,6 +1112,7 @@
         "textoLeido": "Republic of Panama  \n\nTribal Electoral  \n\nCEDULA DE IDENTIDAD PERSONAL  \n\nNOMBRE  \n\nJOSE MIGUEL CASTILLERO PINZON  \n\nCEDula  \n\n4-155-8830  \n\nFECA DE NACIMIENTO  \n\n23-01-1966  \n\nLUARDE DE NACIMIENTO  \n\nDAVID, CHIRIQUI  \n\nSEXO  \n\nM  \n\nTIPO DE SANGRE  \n\nEXPEDIDA  \n\n08-10-2019  \n\nEXPIRA  \n\nNO ES UNA CEDula REAL",
         "descartes": [],
         "campos": {
+          "tipo": "cedula",
           "nombre": "JOSE MIGUEL CASTILLERO PINZON",
           "cedula": "4-155-8830",
           "nacimiento": "1966-01-23",
@@ -1198,6 +1202,19 @@
         { clave: "sangre",     etiqueta: "Tipo de sangre" },
         { clave: "expedida",   etiqueta: "Expedida", fecha: true },
         { clave: "expira",     etiqueta: "Expira", fecha: true }
+    ];
+
+    // Un pasaporte no tiene tipo de sangre ni fecha de expedición en el MRZ. Enseñarlos
+    // en ámbar como «no se pudo leer» seria mentir: no es que no se leyeran, es que no
+    // están.
+    var CAMPOS_PASAPORTE = [
+        { clave: "nombre",       etiqueta: "Nombre" },
+        { clave: "cedula",       etiqueta: "Número de pasaporte" },
+        { clave: "nacimiento",   etiqueta: "Fecha de nacimiento", fecha: true },
+        { clave: "nacionalidad", etiqueta: "Nacionalidad" },
+        { clave: "paisEmisor",   etiqueta: "País emisor" },
+        { clave: "sexo",         etiqueta: "Sexo" },
+        { clave: "expira",       etiqueta: "Expira", fecha: true }
     ];
 
     var CAMPOS_KYC = [
@@ -1339,7 +1356,8 @@
             var enConflicto = {};
             (estado.conflictos || []).forEach(function (c) { enConflicto[c.clave] = true; });
 
-            CAMPOS_CEDULA.forEach(function (def) {
+            var esPasaporte = estado.campos.tipo === "pasaporte";
+            (esPasaporte ? CAMPOS_PASAPORTE : CAMPOS_CEDULA).forEach(function (def) {
                 var bruto = estado.campos[def.clave];
                 if (!bruto) {
                     campos.appendChild(fila(def.etiqueta, "no se pudo leer",
@@ -1350,6 +1368,20 @@
                     { clase: "leido", texto: "leído en la cédula" },
                     { conflicto: !!enConflicto[def.clave] }));
             });
+        }
+
+        // El MRZ es la única parte de todo esto que puede demostrar aritméticamente que
+        // se leyó bien. Cuando cuadra, se dice; cuando no, ya salió en los avisos.
+        var tit = $("tituloDocumento");
+        if (estado.campos && estado.campos.tipo === "pasaporte") {
+            vaciar(tit);
+            tit.appendChild(el("span", null, "Lo que dice el pasaporte"));
+            var c = estado.campos.control || {};
+            var cuadran = [c.numero, c.nacimiento, c.expiracion, c.conjunto].filter(Boolean).length;
+            tit.appendChild(el("span", "sello " + (cuadran === 4 ? "ok" : "mal"),
+                "MRZ " + cuadran + "/4 dígitos de control"));
+        } else {
+            tit.textContent = "Lo que dice la cédula";
         }
 
         // ---- el cotejo ----
