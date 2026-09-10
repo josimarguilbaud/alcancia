@@ -579,6 +579,19 @@
                   transform: scaleX(0); transform-origin: left; transition: transform .5s ease; }
   .paso.listo .paso-barra i { background: var(--verde); }
 
+  .cerrado {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 18px 20px; border-radius: var(--r-l);
+    background: var(--superficie); border: 1px solid var(--verde);
+    box-shadow: var(--sombra);
+  }
+  .cerrado.parado { border-color: var(--ambar); }
+  .cerrado-fila { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
+  .cerrado-folio { font-family: var(--mono); font-size: 26px; font-weight: 700; letter-spacing: .02em; }
+  .cerrado h3 { font-size: 16px; }
+  .cerrado p { font-size: 13.5px; color: var(--media); max-width: 62ch; }
+  .cerrado .sello { align-self: flex-start; }
+
   [hidden] { display: none !important; }
 </style>
 </head>
@@ -757,7 +770,11 @@
 
       <div class="footer-action">
         <div class="motivo-bloqueo" id="motivoBloqueo" hidden></div>
-        <button class="btn-primary" id="continuar">Continuar con el trámite</button>
+        <div class="cerrado" id="cerrado" hidden></div>
+        <div class="botones" id="acciones">
+          <button class="btn-secondary" id="detener" hidden>Dejar constancia y detener</button>
+          <button class="btn-primary" id="continuar">Continuar con el trámite</button>
+        </div>
       </div>
 
     </div>
@@ -1479,6 +1496,11 @@
         var mot = $("motivoBloqueo");
         var razones = estado.razones || [];
         $("continuar").disabled = !estado.puedeSeguir;
+        // Un expediente nuevo borra el acta anterior: nadie cierra dos veces lo mismo.
+        $("cerrado").hidden = true;
+        $("acciones").hidden = false;
+        $("detener").hidden = estado.puedeSeguir || !estado.expediente;
+        $("detener").disabled = false;
         if (razones.length) {
             vaciar(mot);
             mot.appendChild(el("span", null, razones.length === 1
@@ -1688,6 +1710,61 @@
         estado.expediente[c0.clave] = { valor: c0.leido };
         redecidir();
     });
+
+    /* ---------- cerrar el trámite ----------
+       Alcancía no abre la cuenta. Lo que entrega es un expediente verificado, con folio,
+       con la huella del modelo que lo leyó y con la razón de lo que se decidió. Eso es lo
+       que un banco puede auditar seis meses después, y es donde termina su trabajo.
+
+       El servidor vuelve a decidir antes de escribir nada: si la regla dice que el
+       trámite se detiene, no hay botón que lo pase. */
+
+    function cerrar(decision) {
+        if (!hayServidor || !estado.expediente) return;
+        var caja = $("cerrado");
+        $("continuar").disabled = true;
+        $("detener").disabled = true;
+
+        pedir("/cerrar", {
+            expediente: estado.expediente,
+            campos: estado.campos,
+            textoLeido: estado.textoLeido,
+            huella: estado.huella,
+            decision: decision
+        }).then(function (r) {
+            vaciar(caja);
+            caja.className = "cerrado" + (r.decision === "detenido" ? " parado" : "");
+
+            caja.appendChild(el("span", "sello " + (r.decision === "detenido" ? "mal" : "ok"),
+                r.decision === "detenido" ? "trámite detenido" : "trámite continuado"));
+
+            var fila = el("div", "cerrado-fila");
+            fila.appendChild(el("span", "cerrado-folio", r.folio));
+            fila.appendChild(el("h3", null, r.decision === "detenido"
+                ? "Queda constancia de por qué no siguió"
+                : "Expediente cerrado y firmado"));
+            caja.appendChild(fila);
+
+            caja.appendChild(el("p", null, r.decision === "detenido"
+                ? "El expediente queda guardado con el motivo, la lectura del documento y la huella del modelo. Si mañana alguien pregunta por qué este trámite no siguió, la respuesta está escrita."
+                : "El expediente queda guardado con lo que dijo el cliente, lo que dice su cédula, el cotejo entre los dos y la huella del modelo que lo leyó. Alcancía no abre la cuenta: entrega un expediente que el sistema del banco puede aceptar sin volver a preguntar."));
+
+            var otra = el("button", "btn-secondary btn-small", "Atender a otra persona");
+            otra.type = "button";
+            otra.addEventListener("click", function () { location.reload(); });
+            caja.appendChild(otra);
+
+            caja.hidden = false;
+            $("acciones").hidden = true;
+        }).catch(function (e) {
+            $("continuar").disabled = !estado.puedeSeguir;
+            $("detener").disabled = false;
+            decir($("estado"), e.message, true);
+        });
+    }
+
+    $("continuar").addEventListener("click", function () { cerrar("continuar"); });
+    $("detener").addEventListener("click", function () { cerrar("detener"); });
 
     /* ---------- casos de ejemplo ---------- */
 

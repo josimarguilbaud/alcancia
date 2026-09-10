@@ -58,6 +58,14 @@ async function modeloDeDocumentos() {
   return visionpsy;
 }
 
+
+// El libro de expedientes. Alcancia no abre la cuenta: su trabajo termina cuando produce
+// un expediente verificado que otro sistema puede aceptar, y deja constancia de como se
+// verifico. Vive en `datos/`, que no se publica.
+const LIBRO = path.join(DATOS, "expedientes.json");
+const leerLibro = () => (existsSync(LIBRO) ? JSON.parse(readFileSync(LIBRO, "utf-8")) : []);
+const escribirLibro = (l) => writeFileSync(LIBRO, JSON.stringify(l, null, 2));
+
 // ---------- HTTP ----------
 
 const cuerpo = (req) => new Promise((res, rej) => {
@@ -153,6 +161,41 @@ const servidor = http.createServer(async (req, res) => {
       const campos = textoLeido ? camposDeCedula(textoLeido) : null;
       const kyc = campos ? evaluarKyc(campos) : null;
       return json(res, 200, { crudo: r.crudo, descartes: r.descartes, ms: r.ms, stats: r.stats, campos, textoLeido: textoLeido ?? "", ...decidir(r.expediente, campos, kyc), kyc });
+    }
+
+    // Cerrar el tramite. **El servidor vuelve a decidir**: el boton no autoriza nada. Si
+    // el navegador pide continuar sobre un expediente que la regla detiene, se rechaza.
+    // Un boton que decide es un boton que se puede saltar.
+    if (req.method === "POST" && url.pathname === "/cerrar") {
+      const { expediente, campos, textoLeido, huella, decision, oficial } = JSON.parse((await cuerpo(req)).toString("utf-8"));
+      if (!expediente) return json(res, 400, { error: "falta el expediente" });
+
+      const kyc = campos ? evaluarKyc(campos) : null;
+      const d = decidir(expediente, campos ?? null, kyc);
+
+      if (decision === "continuar" && !d.puedeSeguir) {
+        return json(res, 409, { error: "El trámite no puede continuar.", razones: d.razones });
+      }
+
+      const libro = leerLibro();
+      const folio = `ALC-${String(libro.length + 1).padStart(4, "0")}`;
+      const acta = {
+        folio,
+        fecha: new Date().toISOString(),
+        decision: decision === "continuar" ? "continuado" : "detenido",
+        oficial: oficial || "ventanilla",
+        expediente: d.expediente,
+        campos: campos ?? null,
+        kyc,
+        cotejo: d.cotejo,
+        razones: d.razones,
+        huella: huella ?? null,
+        textoLeido: textoLeido ?? "",
+      };
+      libro.push(acta);
+      escribirLibro(libro);
+      console.log(`${acta.decision}: ${folio}`);
+      return json(res, 200, { folio, fecha: acta.fecha, decision: acta.decision, razones: d.razones });
     }
 
     json(res, 404, { error: "no existe" });
