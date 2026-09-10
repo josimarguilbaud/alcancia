@@ -175,6 +175,27 @@ permite en localhost o HTTPS).
 
 ---
 
+## Si no arranca
+
+**«RPC initialization timed out» en Windows.** No es un fallo de esta app: es Windows
+bloqueando los binarios de QVAC, que no van firmados. Smart App Control y la protección
+de reputación los matan en silencio y lo único que se ve es el timeout. Hay que
+permitirlos en Seguridad de Windows, o desactivar Smart App Control mientras se prueba.
+Para ver la causa real en vez del timeout, lanzar el proceso de QVAC a mano con `bare`.
+
+**Se instaló una versión distinta del SDK.** El `package.json` fija `@qvac/sdk` a
+`^0.18.2`, que es con la que están medidos todos los números de este README. Las
+versiones 1.x traen otro `@qvac/fabric` y otro árbol de dependencias, y no están
+probadas aquí. Si `npm install` trajo otra cosa, borrar `node_modules` y
+`package-lock.json` y repetir.
+
+**La primera vez tarda mucho.** `npm install` baja unos 6 GB entre binarios y modelos, y
+el primer arranque los carga en memoria. A partir de ahí es rápido.
+
+**Node.** Medido en v24. Hace falta 20 o superior.
+
+---
+
 ## Cómo está hecho
 
 | Archivo | Qué hace |

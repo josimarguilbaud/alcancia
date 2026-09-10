@@ -6,11 +6,14 @@
   "description": "Alcancía: la ventanilla que no inventa un dato. Lectura de documentos de identidad y expediente KYC dentro del propio equipo de la sucursal.",
   "license": "MIT",
   "dependencies": {
-    "@qvac/sdk": "*"
+    "@qvac/sdk": "^0.18.2"
   },
   "scripts": {
     "start": "node servidor.mjs",
     "prueba": "node prueba-campos.mjs && node prueba-entrevista.mjs",
     "casos": "node generar-casos.mjs"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
