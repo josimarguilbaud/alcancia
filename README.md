@@ -257,6 +257,20 @@ RH   Firmada por Ricardo Him
      OF-02 · La Chorrera · identidad comprobada con PIN en este equipo
 ```
 
+### El libro de actas
+
+Debajo de la ventanilla está el libro: qué firmó cada quien, cuántos trámites siguieron y
+cuántos se detuvieron, y cuándo fue la última vez. Sale del propio libro y no de un
+contador aparte, así que cualquier número de ahí se puede seguir hasta un folio. Un oficial
+en cero también es un dato, y la firma vieja de `"ventanilla"` sigue apareciendo marcada.
+
+```
+YM  Yaritza Mendoza      1 ACTAS   0 SIGUEN   1 DETENIDOS   10 sept
+    Vía España · viene en el padrón de la sucursal
+V   ventanilla           1 ACTAS   1 SIGUEN   0 DETENIDOS    9 sept
+    firma sin verificar, de antes del padrón
+```
+
 ### Los oficiales de ejemplo
 
 Esto es un laboratorio, así que los PIN son públicos y están escritos en la propia pantalla
@@ -359,7 +373,7 @@ el primer arranque los carga en memoria. A partir de ahí es rápido.
 | `documento.mjs` | decide qué documento es, lo lee dos veces, empareja etiqueta con valor, `consensuar` cruza las dos lecturas, `evaluarKyc` da el veredicto y `huellaDe` firma quién lo leyó |
 | `entrevista.mjs` | el dictado → expediente KYC. `cedulaEn`, `telefonoEn`, `montoEn` |
 | `cotejar.mjs` | el cotejo y `decidir`, la regla completa del trámite |
-| `oficiales.mjs` | el padrón de la sucursal, el PIN con sal y quién firma cada acta |
+| `oficiales.mjs` | el padrón de la sucursal, el PIN con sal, quién firma cada acta y `actuacionDe`, que arma el libro |
 | `servidor.mjs` | `/transcribir` `/entrevista` `/documento` `/decidir` `/caso` `/cerrar` `/entrar` `/oficiales` |
 | `index.html` | la ventanilla. No decide nada: pinta lo que devolvió `decidir` |
 | `casos-demo.mjs` + `generar-casos.mjs` | los cuatro casos, calculados con el mismo código y empotrados en la página |

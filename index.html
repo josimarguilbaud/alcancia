@@ -654,6 +654,30 @@
                font: 11.5px var(--texto); padding: 3px 8px; border-radius: 99px }
   .yo button:hover { background: var(--linea-f); color: var(--tinta) }
 
+  /* ---------- el libro de actas ----------
+     Quién firmó qué. En un banco esto no es un extra: es la mitad de para qué existe un
+     libro de actas. */
+  .of { display: flex; align-items: center; gap: 12px; padding: 11px 2px;
+        border-bottom: 1px solid var(--linea-f) }
+  .of:last-child { border-bottom: 0 }
+  .of-txt { flex: 1; min-width: 0 }
+  .of-txt b { display: block; font-size: 14.5px; font-weight: 600 }
+  .of-txt small { color: var(--suave); font-size: 11.5px }
+  .of-num { text-align: right; min-width: 54px }
+  .of-num b { display: block; font: 700 16px var(--mono) }
+  .of-num small { color: var(--suave); font: 9.5px var(--mono); letter-spacing: .09em; text-transform: uppercase }
+  .of-num.cero b { color: var(--suave) }
+  .of-num.freno b { color: var(--ambar) }
+  .of.libre .ini { background: var(--suave) }
+  .of.libre .of-txt small { color: var(--ambar) }
+  .libro-nota { color: var(--suave); font-size: 12px; line-height: 1.5; margin-top: 4px }
+  @media (max-width: 620px) {
+    .of { flex-wrap: wrap; row-gap: 8px }
+    .of-txt { flex: 1 0 calc(100% - 44px) }
+    .of-num { flex: 1; min-width: 0; text-align: left }
+    .of-num:first-of-type { margin-left: 43px }
+  }
+
   /* La firma al pie del acta: es la mitad del folio. */
   .firma-acta { display: flex; align-items: center; gap: 9px; margin-top: 12px; padding-top: 12px;
                 border-top: 1px dashed var(--linea); font-size: 13px; color: var(--media) }
@@ -888,6 +912,22 @@
     </div>
 
   </div>
+
+  <section class="tarjeta" id="tarjetaLibro" hidden>
+    <span class="filo cian"></span>
+    <div class="tarjeta-cabeza">
+      <span class="icono" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H18a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5.5A1.5 1.5 0 0 1 4 18.5z"/><path d="M4 17.5A1.5 1.5 0 0 1 5.5 16H20"/><path d="M8 8h8M8 11h5"/></svg>
+      </span>
+      <h2>El libro de actas</h2>
+      <span class="rotulo">Quién firmó qué</span>
+    </div>
+    <div class="tarjeta-cuerpo">
+      <div id="libro"></div>
+      <p class="libro-nota">Cada número sale del libro: se puede seguir hasta un folio. Un oficial en cero también es un dato.</p>
+    </div>
+  </section>
+
 </div>
 
 <div class="velo" id="tuberia" hidden>
@@ -1916,6 +1956,7 @@
 
             caja.hidden = false;
             $("acciones").hidden = true;
+            pintarLibro();
         }).catch(function (e) {
             $("continuar").disabled = !estado.puedeSeguir;
             $("detener").disabled = false;
@@ -2041,6 +2082,7 @@
                 localStorage.setItem("alcancia.yo", JSON.stringify(yo));
                 $("entrada").hidden = true;
                 pintarFirma();
+                pintarLibro();
             });
         }).catch(function (e) { aviso.textContent = e.message; aviso.hidden = false; });
     }
@@ -2061,6 +2103,53 @@
         olvidar();
         abrirEntrada();
     });
+
+    /* ---------- el libro de actas ---------- */
+
+    function pintarLibro() {
+        if (!hayServidor) return Promise.resolve();
+        return fetch("/oficiales").then(function (r) { return r.json(); }).then(function (t) {
+            var caja = $("libro");
+            vaciar(caja);
+            (t.actuacion || []).forEach(function (f) {
+                var fila = el("div", "of" + (f.verificado ? "" : " libre"));
+                fila.appendChild(el("span", "ini", iniciales(f.nombre)));
+
+                var txt = el("div", "of-txt");
+                txt.appendChild(el("b", null, f.nombre));
+                var como = !f.verificado ? "firma sin verificar, de antes del padrón"
+                    : f.origen === "alta local" ? "se dio de alta en este equipo"
+                    : "viene en el padrón de la sucursal";
+                txt.appendChild(el("small", null, (f.sucursal ? f.sucursal + " · " : "") + como));
+                fila.appendChild(txt);
+
+                function numero(valor, etiqueta, clase) {
+                    var n = el("div", "of-num" + (clase ? " " + clase : ""));
+                    n.appendChild(el("b", null, String(valor)));
+                    n.appendChild(el("small", null, etiqueta));
+                    return n;
+                }
+                fila.appendChild(numero(f.actas, "actas", f.actas ? null : "cero"));
+                fila.appendChild(numero(f.continuados, "siguen", f.continuados ? null : "cero"));
+                fila.appendChild(numero(f.detenidos, "detenidos", f.detenidos ? "freno" : "cero"));
+
+                var cuando = el("div", "of-num cero");
+                cuando.appendChild(el("b", null, f.ultima ? fechaCorta(f.ultima) : "—"));
+                cuando.appendChild(el("small", null, "última"));
+                cuando.firstChild.style.fontSize = "12px";
+                fila.appendChild(cuando);
+
+                caja.appendChild(fila);
+            });
+            if (!caja.firstChild) caja.appendChild(el("p", "libro-nota", "Todavía no hay nadie en el padrón de este equipo."));
+            $("tarjetaLibro").hidden = false;
+        }).catch(function () { /* sin servidor no hay libro que enseñar */ });
+    }
+
+    function fechaCorta(iso) {
+        try { return new Date(iso).toLocaleDateString("es-PA", { day: "numeric", month: "short" }); }
+        catch (e) { return "—"; }
+    }
 
     /* ---------- arranque ---------- */
 
@@ -2087,6 +2176,7 @@
             // firmar nada. Sin servidor no hay a quién preguntarle, y la copia guardada
             // solo enseña casos ya medidos.
             pintarFirma();
+            pintarLibro();
             if (hayServidor && !sesion) abrirEntrada();
         });
 })();
