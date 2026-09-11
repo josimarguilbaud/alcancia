@@ -8,7 +8,8 @@
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { readFileSync, writeFileSync, existsSync, mkdirSync, copyFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
 import { fileURLToPath } from "node:url";
 import {
   loadModel, transcribe,
@@ -19,6 +20,7 @@ import {
 import { leerCedula, evaluarKyc, camposDeDocumento } from "./documento.mjs";
 import { extraerEntrevista, expedienteDe } from "./entrevista.mjs";
 import { decidir } from "./cotejar.mjs";
+import { pinCorrecto, esperaTras, oficialPublico, registrar, oficialDe, actuacionDe } from "./oficiales.mjs";
 
 // El nombre del producto vive aquí, y en el <title> y el <h1> de index.html.
 const PRODUCTO = "Alcancía";
@@ -66,6 +68,26 @@ const LIBRO = path.join(DATOS, "expedientes.json");
 const leerLibro = () => (existsSync(LIBRO) ? JSON.parse(readFileSync(LIBRO, "utf-8")) : []);
 const escribirLibro = (l) => writeFileSync(LIBRO, JSON.stringify(l, null, 2));
 
+// ---------- el padron de la sucursal ----------
+// Quien puede firmar un acta en este equipo. Se siembra la primera vez con los oficiales
+// de ejemplo; a partir de ahi el archivo es de la sucursal. Las sales y los hashes viven
+// SOLO aqui: al navegador nunca le llega mas que id, nombre y sucursal.
+const PADRON = path.join(DATOS, "oficiales.json");
+const PADRON_EJEMPLO = path.join(DIR, "datos-ejemplo", "oficiales.json");
+function leerPadron() {
+  if (!existsSync(PADRON) && existsSync(PADRON_EJEMPLO)) copyFileSync(PADRON_EJEMPLO, PADRON);
+  return existsSync(PADRON) ? JSON.parse(readFileSync(PADRON, "utf-8")) : [];
+}
+const escribirPadron = (p) => writeFileSync(PADRON, JSON.stringify(p, null, 2));
+
+// La sesion vive en memoria y se muere con el proceso: no hay cookie, no hay disco, no
+// hay red. Existe para que el acta no se pueda firmar con el nombre de otro solo por
+// escribirlo en el cuerpo de la peticion. Sin esto la firma seria decorado, que es
+// exactamente lo que era: todas las actas salian firmadas "ventanilla".
+const SESIONES = new Map();
+const FALLOS = new Map(); // por oficial: cuantos PIN malos seguidos, y hasta cuando espera
+const quienEs = (req) => SESIONES.get(String(req.headers["x-alcancia-sesion"] ?? ""));
+
 // ---------- HTTP ----------
 
 const cuerpo = (req) => new Promise((res, rej) => {
@@ -104,6 +126,47 @@ const servidor = http.createServer(async (req, res) => {
 
     // Voz del oficial -> texto. Se guarda la última grabación para poder reproducir
     // un fallo con la voz real en vez de con una transcripción de memoria.
+    // ---------- quien firma ----------
+    // Va sin sesion a proposito: para elegir quien eres hay que poder ver la lista antes
+    // de entrar, y aqui no viaja ni una sal ni un hash.
+    if (req.method === "GET" && url.pathname === "/oficiales") {
+      const padron = leerPadron();
+      return json(res, 200, { padron: padron.map(oficialPublico), actuacion: actuacionDe(leerLibro(), padron) });
+    }
+    if (req.method === "POST" && url.pathname === "/entrar") {
+      const { id, pin } = JSON.parse((await cuerpo(req)).toString("utf-8"));
+      const oficial = leerPadron().find((o) => o.id === id);
+      // Mismo mensaje y mismo camino si el oficial no existe o si el PIN esta mal: si
+      // fueran distintos, probar ids seria una forma de averiguar quien trabaja aqui.
+      const estado = FALLOS.get(id) ?? { fallos: 0, hasta: 0 };
+      const faltan = estado.hasta - Date.now();
+      if (faltan > 0) return json(res, 429, { error: `Demasiados intentos. Espera ${Math.ceil(faltan / 1000)} s.`, esperaMs: faltan });
+      if (!oficial || !pinCorrecto(oficial, pin)) {
+        const fallos = estado.fallos + 1;
+        FALLOS.set(id, { fallos, hasta: Date.now() + esperaTras(fallos) });
+        return json(res, 401, { error: "Ese PIN no es." });
+      }
+      FALLOS.delete(id);
+      const sesion = randomBytes(24).toString("hex");
+      SESIONES.set(sesion, { id: oficial.id, nombre: oficial.nombre, sucursal: oficial.sucursal, verificado: true });
+      console.log(`abrio ventanilla ${oficial.nombre} (${oficial.id})`);
+      return json(res, 200, { ok: true, sesion, oficial: oficialPublico(oficial) });
+    }
+    if (req.method === "POST" && url.pathname === "/registrar") {
+      const { nombre, sucursal, pin } = JSON.parse((await cuerpo(req)).toString("utf-8"));
+      const padron = leerPadron();
+      const r = registrar(padron, { nombre, sucursal, pin });
+      if (r.error) return json(res, 400, { error: r.error });
+      padron.push(r.oficial); escribirPadron(padron);
+      const sesion = randomBytes(24).toString("hex");
+      SESIONES.set(sesion, { id: r.oficial.id, nombre: r.oficial.nombre, sucursal: r.oficial.sucursal, verificado: true });
+      return json(res, 200, { ok: true, sesion, oficial: oficialPublico(r.oficial) });
+    }
+    if (req.method === "POST" && url.pathname === "/salir") {
+      SESIONES.delete(String(req.headers["x-alcancia-sesion"] ?? ""));
+      return json(res, 200, { ok: true });
+    }
+
     if (req.method === "POST" && url.pathname === "/transcribir") {
       const audio = await cuerpo(req);
       if (!audio.length) return json(res, 400, { error: "falta el audio" });
@@ -167,7 +230,13 @@ const servidor = http.createServer(async (req, res) => {
     // el navegador pide continuar sobre un expediente que la regla detiene, se rechaza.
     // Un boton que decide es un boton que se puede saltar.
     if (req.method === "POST" && url.pathname === "/cerrar") {
-      const { expediente, campos, textoLeido, huella, decision, oficial } = JSON.parse((await cuerpo(req)).toString("utf-8"));
+      // La firma sale de la SESION, nunca del cuerpo de la peticion. Ese era el agujero:
+      // el acta decide si una cuenta se abre y todas salian firmadas "ventanilla", porque
+      // el nombre venia en el cuerpo y la interfaz ni siquiera lo mandaba. Si viniera en
+      // el cuerpo, firmar como otra persona seria teclearlo.
+      const yo = quienEs(req);
+      if (!yo) return json(res, 401, { error: "Entra con tu PIN antes de cerrar un trámite." });
+      const { expediente, campos, textoLeido, huella, decision } = JSON.parse((await cuerpo(req)).toString("utf-8"));
       if (!expediente) return json(res, 400, { error: "falta el expediente" });
 
       const kyc = campos ? evaluarKyc(campos) : null;
@@ -183,7 +252,7 @@ const servidor = http.createServer(async (req, res) => {
         folio,
         fecha: new Date().toISOString(),
         decision: decision === "continuar" ? "continuado" : "detenido",
-        oficial: oficial || "ventanilla",
+        oficial: { id: yo.id, nombre: yo.nombre, sucursal: yo.sucursal, verificado: true },
         expediente: d.expediente,
         campos: campos ?? null,
         kyc,
@@ -194,8 +263,8 @@ const servidor = http.createServer(async (req, res) => {
       };
       libro.push(acta);
       escribirLibro(libro);
-      console.log(`${acta.decision}: ${folio}`);
-      return json(res, 200, { folio, fecha: acta.fecha, decision: acta.decision, razones: d.razones });
+      console.log(`${acta.decision}: ${folio} · ${yo.nombre} (${yo.id})`);
+      return json(res, 200, { folio, fecha: acta.fecha, decision: acta.decision, razones: d.razones, oficial: oficialDe(acta) });
     }
 
     json(res, 404, { error: "no existe" });

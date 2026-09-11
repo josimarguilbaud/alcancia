@@ -1,0 +1,29 @@
+[
+  {
+    "id": "OF-01",
+    "nombre": "Yaritza Mendoza",
+    "sucursal": "Vía España",
+    "origen": "padrón",
+    "alta": "2026-09-01T08:00:00.000Z",
+    "sal": "c6bb2c3261a0333667c0b60abd738e8c",
+    "pinHash": "53dbedacc70e32725c11a34a136bce83ecb5121f2d8c7bdd695066ff2bbae11f"
+  },
+  {
+    "id": "OF-02",
+    "nombre": "Ricardo Him",
+    "sucursal": "La Chorrera",
+    "origen": "padrón",
+    "alta": "2026-09-01T08:00:00.000Z",
+    "sal": "a776b66fae5d8beef89730fb68d8461a",
+    "pinHash": "047fea390146c8289be9dd4f461e487a395657d1c91b03e0d595058000f1b40b"
+  },
+  {
+    "id": "OF-03",
+    "nombre": "Damaris Sáez",
+    "sucursal": "David",
+    "origen": "padrón",
+    "alta": "2026-09-01T08:00:00.000Z",
+    "sal": "5a12f23034517932340f7399536ea6c0",
+    "pinHash": "89b9b495a959b15aac8f4b25ef02f7bd4aa3ed3666b54e9ede3e29cdcf3821d3"
+  }
+]

@@ -214,6 +214,62 @@ mal leída, es barato.
 
 ---
 
+## Quién firma el acta
+
+Alcancía no abre la cuenta: entrega un expediente cerrado con folio, y ese expediente dice
+si el trámite sigue o se detiene. Es el documento que alguien va a leer dentro de seis
+meses cuando pregunten por qué esta cuenta se abrió, o por qué aquella no.
+
+Durante un tiempo **todas las actas salían firmadas `"ventanilla"`**. El nombre venía en el
+cuerpo de la petición y la interfaz ni siquiera lo mandaba, así que el valor por defecto se
+quedaba puesto. Un acta que no sabe quién la firmó no es un acta: es una nota.
+
+**Ahora se abre la ventanilla con un PIN.** El padrón de la sucursal vive en
+`datos/oficiales.json` y cada oficial tiene su propia sal; lo que se guarda es
+`sha256(sal + pin)`, nunca el PIN. La comprobación es en el equipo, con `node:crypto`, sin
+una sola llamada de red. Tras tres fallos seguidos la espera sube a 5 s, 15 s, 60 s y
+5 min, y se cuenta **por oficial**: si fuera por equipo, el primero que se equivoca deja
+sin atender a toda la sucursal.
+
+Lo que importa de verdad: **la firma la pone el servidor desde la sesión, nunca el cuerpo
+de la petición**. Mandar `oficial: "Yaritza Mendoza"` en el cuerpo no hace nada; el acta
+sale firmada por quien abrió la ventanilla. Está probado.
+
+Y hay que decir qué **no** es. Cuatro dígitos no son el directorio del banco, y tampoco son
+la doble firma que un banco de verdad exige para abrir una cuenta. Es la prueba más fuerte
+que se puede dar sin salir del equipo, y el sistema no aparenta más de lo que tiene:
+
+- Quien venía en la lista de la sucursal sale como **del padrón**; quien se registró en el
+  equipo sale como **alta local**.
+- Las actas cerradas antes salen marcadas **sin verificar**, con su `"ventanilla"` y todo.
+  No se borran ni se reescriben: a un libro de actas al que se le corrige el pasado se le
+  acabó lo único para lo que sirve.
+- **El libro sigue siendo un JSON que se puede editar a mano.** Encadenar las actas por
+  hash para que una edición se note es otra cosa, y **todavía no está hecha**.
+
+Al pie del acta queda así:
+
+```
+TRÁMITE CONTINUADO          ALC-0003
+Expediente cerrado y firmado
+─────────────────────────────────────────────
+RH   Firmada por Ricardo Him
+     OF-02 · La Chorrera · identidad comprobada con PIN en este equipo
+```
+
+### Los oficiales de ejemplo
+
+Esto es un laboratorio, así que los PIN son públicos y están escritos en la propia pantalla
+de entrada:
+
+| Oficial | Sucursal | PIN |
+|---|---|---|
+| `OF-01` Yaritza Mendoza | Vía España | `3691` |
+| `OF-02` Ricardo Him | La Chorrera | `8024` |
+| `OF-03` Damaris Sáez | David | `5137` |
+
+Con «No estoy en la lista» te das de alta en el equipo.
+
 ## Lo que está medido
 
 | | |
@@ -221,7 +277,7 @@ mal leída, es barato.
 | Campos leídos | **30** en cuatro cédulas sintéticas |
 | Campos mal | **0** |
 | Trámites decididos como lo haría un operador | **4 / 4** |
-| Pruebas deterministas | **159** |
+| Pruebas deterministas | **214** |
 
 Registro completo en [`rendimiento/cedulas.json`](rendimiento/cedulas.json), con el texto
 crudo que devolvió el modelo en cada documento.
@@ -253,7 +309,7 @@ Hace falta **Node 20 o superior** (medido en v24) y unos **10 GB** libres.
 
 ```bash
 npm install     # los binarios de QVAC: 5,5 GB, una sola vez
-npm run prueba  # 159 pruebas sin modelo: confirma que el árbol quedó bien
+npm run prueba  # 214 pruebas sin modelo: confirma que el árbol quedó bien
 npm start       # http://localhost:3215
 ```
 
@@ -264,7 +320,7 @@ instalaste Tako, aquí no se vuelven a bajar.
 La primera foto tarda más: es cuando se carga VisionPsy.
 
 ```bash
-npm run prueba  # 159 pruebas deterministas, sin modelo, en milisegundos
+npm run prueba  # 214 pruebas deterministas, sin modelo, en milisegundos
 npm run casos   # recalcula los cuatro casos de la demostración
 ```
 
@@ -303,7 +359,8 @@ el primer arranque los carga en memoria. A partir de ahí es rápido.
 | `documento.mjs` | decide qué documento es, lo lee dos veces, empareja etiqueta con valor, `consensuar` cruza las dos lecturas, `evaluarKyc` da el veredicto y `huellaDe` firma quién lo leyó |
 | `entrevista.mjs` | el dictado → expediente KYC. `cedulaEn`, `telefonoEn`, `montoEn` |
 | `cotejar.mjs` | el cotejo y `decidir`, la regla completa del trámite |
-| `servidor.mjs` | `/transcribir` `/entrevista` `/documento` `/decidir` `/caso` |
+| `oficiales.mjs` | el padrón de la sucursal, el PIN con sal y quién firma cada acta |
+| `servidor.mjs` | `/transcribir` `/entrevista` `/documento` `/decidir` `/caso` `/cerrar` `/entrar` `/oficiales` |
 | `index.html` | la ventanilla. No decide nada: pinta lo que devolvió `decidir` |
 | `casos-demo.mjs` + `generar-casos.mjs` | los cuatro casos, calculados con el mismo código y empotrados en la página |
 | `documentos/generar.mjs` | fabrica las cuatro cédulas sintéticas |
