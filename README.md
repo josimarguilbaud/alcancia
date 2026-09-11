@@ -249,10 +249,17 @@ cliente no sale del equipo porque no hay a dónde mandarla.
 
 ## Correrlo
 
+Hace falta **Node 20 o superior** (medido en v24) y unos **10 GB** libres.
+
 ```bash
-npm install     # QVAC son ~6 GB de binarios y modelos
+npm install     # los binarios de QVAC: 5,5 GB, una sola vez
+npm run prueba  # 159 pruebas sin modelo: confirma que el árbol quedó bien
 npm start       # http://localhost:3215
 ```
+
+El primer arranque descarga los modelos (4,3 GB) y necesita internet **esa vez**; después
+funciona sin conexión. Viven en `~/.qvac/models` y **se comparten entre proyectos**: si ya
+instalaste Tako, aquí no se vuelven a bajar.
 
 La primera foto tarda más: es cuando se carga VisionPsy.
 
